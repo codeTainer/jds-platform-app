@@ -12,7 +12,8 @@ use Illuminate\Support\Str;
 class MemberAccountProvisioner
 {
     public function __construct(
-        private readonly MemberNumberGenerator $memberNumberGenerator
+        private readonly MemberNumberGenerator $memberNumberGenerator,
+        private readonly ProcessNotifier $processNotifier
     ) {
     }
 
@@ -73,6 +74,24 @@ class MemberAccountProvisioner
                     ])->save();
                 } catch (\Throwable $exception) {
                     Log::warning('Unable to send temporary JDS credentials.', [
+                        'user_id' => $result['user']->id,
+                        'email' => $result['user']->email,
+                        'message' => $exception->getMessage(),
+                    ]);
+                }
+
+                try {
+                    $this->processNotifier->notifyUser(
+                        $result['user'],
+                        title: 'Temporary account created',
+                        message: 'Your JDS platform account has been created. Sign in with your temporary password and change it immediately.',
+                        category: 'accounts',
+                        actionUrl: '/',
+                        actionLabel: 'Open login',
+                        level: 'info',
+                    );
+                } catch (\Throwable $exception) {
+                    Log::warning('Unable to store in-app temporary account notification.', [
                         'user_id' => $result['user']->id,
                         'email' => $result['user']->email,
                         'message' => $exception->getMessage(),

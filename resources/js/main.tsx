@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './src/auth/AuthContext';
 import { AppRouter } from './src/app/AppRouter';
 import { ToastProvider } from './src/feedback/ToastProvider';
+import { NotificationsProvider } from './src/notifications/NotificationsProvider';
 
 const rootElement = document.getElementById('app');
 
@@ -12,9 +13,11 @@ if (rootElement) {
         <React.StrictMode>
             <BrowserRouter>
                 <AuthProvider>
-                    <ToastProvider>
-                        <AppRouter />
-                    </ToastProvider>
+                    <NotificationsProvider>
+                        <ToastProvider>
+                            <AppRouter />
+                        </ToastProvider>
+                    </NotificationsProvider>
                 </AuthProvider>
             </BrowserRouter>
         </React.StrictMode>,

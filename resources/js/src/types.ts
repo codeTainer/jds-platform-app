@@ -343,3 +343,21 @@ export interface LoginResponse {
     token_type: string;
     user: User;
 }
+
+export interface AppNotification {
+    id: string;
+    title: string;
+    message: string;
+    category: 'shares' | 'fees' | 'loans' | 'security' | 'accounts' | 'general';
+    action_url?: string | null;
+    action_label?: string | null;
+    level: 'info' | 'success' | 'warning' | 'error';
+    meta?: Record<string, unknown>;
+    read_at?: string | null;
+    created_at?: string | null;
+}
+
+export interface NotificationListResponse {
+    unread_count: number;
+    notifications: AppNotification[];
+}

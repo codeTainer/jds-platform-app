@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\UserAccessToken;
+use App\Support\ProcessNotifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -11,6 +12,11 @@ use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
 {
+    public function __construct(
+        private readonly ProcessNotifier $processNotifier
+    ) {
+    }
+
     public function login(Request $request)
     {
         $data = $request->validate([
@@ -94,6 +100,16 @@ class AuthController extends Controller
             'must_change_password' => false,
             'password_changed_at' => now(),
         ])->save();
+
+        $this->processNotifier->notifyUser(
+            $user,
+            title: 'Password changed successfully',
+            message: 'Your password has been updated successfully.',
+            category: 'security',
+            actionUrl: $user->role === User::ROLE_MEMBER ? '/dashboard/member' : '/dashboard/exco',
+            actionLabel: 'Open dashboard',
+            level: 'success',
+        );
 
         return response()->json([
             'message' => 'Password changed successfully.',

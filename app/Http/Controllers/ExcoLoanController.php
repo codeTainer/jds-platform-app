@@ -5,12 +5,18 @@ namespace App\Http\Controllers;
 use App\Models\Loan;
 use App\Models\LoanRepayment;
 use App\Models\LoanRepaymentSubmission;
+use App\Support\ProcessNotifier;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class ExcoLoanController extends Controller
 {
+    public function __construct(
+        private readonly ProcessNotifier $processNotifier
+    ) {
+    }
+
     public function index(Request $request)
     {
         $requestedMonth = $request->filled('requested_month')
@@ -71,6 +77,17 @@ class ExcoLoanController extends Controller
             return $loan->fresh(['member', 'guarantor', 'cycle', 'guarantorApprovals', 'disbursement']);
         });
 
+        $this->processNotifier->notifyMember(
+            $updatedLoan->member,
+            title: 'Loan approved',
+            message: 'Your loan request has been approved by EXCO.',
+            category: 'loans',
+            actionUrl: '/dashboard/member/loans',
+            actionLabel: 'Open loans',
+            level: 'success',
+            meta: ['loan_id' => $updatedLoan->id],
+        );
+
         return response()->json([
             'message' => 'Loan approved successfully.',
             'loan' => $updatedLoan,
@@ -94,9 +111,22 @@ class ExcoLoanController extends Controller
             'notes' => $data['notes'] ?? $loan->notes,
         ]);
 
+        $freshLoan = $loan->fresh(['member', 'guarantor', 'cycle', 'guarantorApprovals', 'disbursement']);
+
+        $this->processNotifier->notifyMember(
+            $freshLoan->member,
+            title: 'Loan rejected',
+            message: 'Your loan request was reviewed and rejected by EXCO.',
+            category: 'loans',
+            actionUrl: '/dashboard/member/loans',
+            actionLabel: 'Open loans',
+            level: 'warning',
+            meta: ['loan_id' => $freshLoan->id],
+        );
+
         return response()->json([
             'message' => 'Loan rejected successfully.',
-            'loan' => $loan->fresh(['member', 'guarantor', 'cycle', 'guarantorApprovals', 'disbursement']),
+            'loan' => $freshLoan,
         ]);
     }
 
@@ -141,6 +171,17 @@ class ExcoLoanController extends Controller
 
             return $loan->fresh(['member', 'guarantor', 'cycle', 'guarantorApprovals', 'disbursement']);
         });
+
+        $this->processNotifier->notifyMember(
+            $updatedLoan->member,
+            title: 'Loan disbursed',
+            message: 'Your approved loan has been disbursed. Please view the receipt and confirm it in the app.',
+            category: 'loans',
+            actionUrl: '/dashboard/member/loans',
+            actionLabel: 'View receipt',
+            level: 'success',
+            meta: ['loan_id' => $updatedLoan->id],
+        );
 
         return response()->json([
             'message' => 'Loan disbursed successfully.',
@@ -222,6 +263,22 @@ class ExcoLoanController extends Controller
 
             return $loan->fresh(['member', 'guarantor', 'cycle', 'guarantorApprovals', 'disbursement', 'repayments', 'repaymentSubmissions']);
         });
+
+        $this->processNotifier->notifyMember(
+            $updatedLoan->member,
+            title: $data['status'] === 'approved' ? 'Repayment approved' : 'Repayment update',
+            message: $data['status'] === 'approved'
+                ? 'Your repayment receipt has been approved and applied to your loan balance.'
+                : 'Your repayment receipt was reviewed and rejected. Please check the note and resubmit if needed.',
+            category: 'loans',
+            actionUrl: '/dashboard/member/loans',
+            actionLabel: 'Open loans',
+            level: $data['status'] === 'approved' ? 'success' : 'warning',
+            meta: [
+                'loan_id' => $updatedLoan->id,
+                'submission_id' => $loanRepaymentSubmission->id,
+            ],
+        );
 
         return response()->json([
             'message' => $data['status'] === 'approved'

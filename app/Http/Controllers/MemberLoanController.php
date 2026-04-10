@@ -6,6 +6,7 @@ use App\Models\Loan;
 use App\Models\LoanGuarantorApproval;
 use App\Models\LoanRepaymentSubmission;
 use App\Models\MembershipCycle;
+use App\Support\ProcessNotifier;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -13,6 +14,11 @@ use Illuminate\Validation\Rule;
 
 class MemberLoanController extends Controller
 {
+    public function __construct(
+        private readonly ProcessNotifier $processNotifier
+    ) {
+    }
+
     public function overview(Request $request)
     {
         $member = $request->user()?->member;
@@ -152,9 +158,43 @@ class MemberLoanController extends Controller
             return $loan;
         });
 
+        $loadedLoan = $loan->load(['cycle', 'guarantor', 'guarantorApprovals']);
+
+        $this->processNotifier->notifyMember(
+            $member,
+            title: 'Loan request sent',
+            message: 'Your loan request has been submitted successfully and is awaiting guarantor response.',
+            category: 'loans',
+            actionUrl: '/dashboard/member/loans',
+            actionLabel: 'Open loans',
+            level: 'success',
+            meta: ['loan_id' => $loan->id],
+        );
+
+        $this->processNotifier->notifyMember(
+            $loadedLoan->guarantor,
+            title: 'Guarantor request sent',
+            message: "{$member->full_name} selected you as guarantor for a loan request.",
+            category: 'loans',
+            actionUrl: '/dashboard/member/loans',
+            actionLabel: 'Review request',
+            level: 'info',
+            meta: ['loan_id' => $loan->id],
+        );
+
+        $this->processNotifier->notifyExco(
+            title: 'New loan request submitted',
+            message: "{$member->full_name} submitted a new loan request that is awaiting guarantor approval.",
+            category: 'loans',
+            actionUrl: '/dashboard/exco/loans',
+            actionLabel: 'Open loans',
+            level: 'info',
+            meta: ['loan_id' => $loan->id],
+        );
+
         return response()->json([
             'message' => 'Loan request submitted successfully.',
-            'loan' => $loan->load(['cycle', 'guarantor', 'guarantorApprovals']),
+            'loan' => $loadedLoan,
         ], 201);
     }
 
@@ -246,6 +286,33 @@ class MemberLoanController extends Controller
             return $loanGuarantorApproval->fresh(['loan.member', 'loan.cycle']);
         });
 
+        $loan = $approval->loan;
+
+        $this->processNotifier->notifyMember(
+            $loan?->member,
+            title: $data['status'] === 'approved' ? 'Guarantor approved your request' : 'Guarantor rejected your request',
+            message: $data['status'] === 'approved'
+                ? 'Your guarantor has approved your loan request. EXCO can now continue the review.'
+                : 'Your guarantor declined your loan request.',
+            category: 'loans',
+            actionUrl: '/dashboard/member/loans',
+            actionLabel: 'Open loans',
+            level: $data['status'] === 'approved' ? 'success' : 'warning',
+            meta: ['loan_id' => $approval->loan_id],
+        );
+
+        if ($data['status'] === 'approved' && $loan) {
+            $this->processNotifier->notifyExco(
+                title: 'Loan ready for EXCO review',
+                message: "{$loan->member?->full_name} now has full guarantor approval on a loan request.",
+                category: 'loans',
+                actionUrl: '/dashboard/exco/loans',
+                actionLabel: 'Review loan',
+                level: 'info',
+                meta: ['loan_id' => $approval->loan_id],
+            );
+        }
+
         return response()->json([
             'message' => 'Guarantor response recorded successfully.',
             'approval' => $approval,
@@ -303,6 +370,16 @@ class MemberLoanController extends Controller
             'status' => 'member_confirmed',
             'member_confirmed_at' => now(),
         ]);
+
+        $this->processNotifier->notifyExco(
+            title: 'Loan receipt confirmed',
+            message: "{$member->full_name} confirmed receipt of a disbursed loan.",
+            category: 'loans',
+            actionUrl: '/dashboard/exco/loans',
+            actionLabel: 'Open loans',
+            level: 'success',
+            meta: ['loan_id' => $loan->id],
+        );
 
         return response()->json([
             'message' => 'Loan receipt confirmed successfully.',
@@ -400,6 +477,19 @@ class MemberLoanController extends Controller
             'submitted_at' => now(),
             'member_note' => $data['member_note'] ?? null,
         ])->load(['loan.cycle', 'reviewer', 'approvedLoanRepayment']);
+
+        $this->processNotifier->notifyExco(
+            title: 'New repayment receipt submitted',
+            message: "{$member->full_name} submitted a loan repayment receipt for EXCO review.",
+            category: 'loans',
+            actionUrl: '/dashboard/exco/loans',
+            actionLabel: 'Review repayments',
+            level: 'info',
+            meta: [
+                'loan_id' => $loan->id,
+                'submission_id' => $submission->id,
+            ],
+        );
 
         return response()->json([
             'message' => 'Loan repayment receipt submitted successfully for EXCO review.',

@@ -8,6 +8,7 @@ use App\Models\MembershipFee;
 use App\Models\MembershipFeeSubmission;
 use App\Models\SharePurchase;
 use App\Models\SharePaymentSubmission;
+use App\Support\ProcessNotifier;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +17,11 @@ use Illuminate\Validation\Rule;
 
 class ExcoSavingsController extends Controller
 {
+    public function __construct(
+        private readonly ProcessNotifier $processNotifier
+    ) {
+    }
+
     public function membershipFees(Request $request)
     {
         $paidMonth = $request->filled('paid_month')
@@ -218,6 +224,22 @@ class ExcoSavingsController extends Controller
             return $sharePaymentSubmission->fresh(['member', 'cycle', 'reviewer', 'approvedSharePurchase']);
         });
 
+        $this->processNotifier->notifyMember(
+            $submission->member,
+            title: $data['status'] === 'approved' ? 'Share purchase approved' : 'Share purchase update',
+            message: $data['status'] === 'approved'
+                ? 'Your share payment receipt has been approved and posted to your savings record.'
+                : 'Your share payment receipt was reviewed and rejected. Please check the review note and resubmit if needed.',
+            category: 'shares',
+            actionUrl: '/dashboard/member/savings',
+            actionLabel: 'Open savings',
+            level: $data['status'] === 'approved' ? 'success' : 'warning',
+            meta: [
+                'submission_id' => $submission->id,
+                'status' => $submission->status,
+            ],
+        );
+
         return response()->json([
             'message' => $data['status'] === 'approved'
                 ? 'Share payment submission approved and posted successfully.'
@@ -284,6 +306,22 @@ class ExcoSavingsController extends Controller
 
             return $membershipFeeSubmission->fresh(['member', 'cycle', 'reviewer', 'approvedMembershipFee']);
         });
+
+        $this->processNotifier->notifyMember(
+            $submission->member,
+            title: $data['status'] === 'approved' ? 'Membership fee approved' : 'Membership fee update',
+            message: $data['status'] === 'approved'
+                ? 'Your membership fee receipt has been approved and posted to your fee records.'
+                : 'Your membership fee receipt was reviewed and rejected. Please check the review note and resubmit if needed.',
+            category: 'fees',
+            actionUrl: '/dashboard/member/savings',
+            actionLabel: 'Open fee records',
+            level: $data['status'] === 'approved' ? 'success' : 'warning',
+            meta: [
+                'submission_id' => $submission->id,
+                'status' => $submission->status,
+            ],
+        );
 
         return response()->json([
             'message' => $data['status'] === 'approved'

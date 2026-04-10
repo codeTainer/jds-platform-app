@@ -1463,6 +1463,219 @@ a:active {
     padding: 1.75rem 1.75rem 2rem;
 }
 
+.dashboard-main__topbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 1rem;
+}
+
+.dashboard-notifications-trigger {
+    align-items: center;
+    background: #ffffff;
+    border: 1px solid rgba(12, 59, 102, 0.1);
+    border-radius: 999px;
+    box-shadow: 0 12px 28px rgba(14, 49, 83, 0.06);
+    color: #14314a;
+    display: inline-flex;
+    gap: 0.7rem;
+    min-height: 46px;
+    padding: 0.8rem 1rem;
+}
+
+.dashboard-notifications-trigger svg {
+    height: 18px;
+    width: 18px;
+}
+
+.dashboard-notifications-trigger__count {
+    align-items: center;
+    background: #0b4c89;
+    border-radius: 999px;
+    color: #ffffff;
+    display: inline-flex;
+    font-size: 0.82rem;
+    font-weight: 700;
+    height: 24px;
+    justify-content: center;
+    min-width: 24px;
+    padding: 0 0.45rem;
+}
+
+.dashboard-notifications-overlay {
+    background: rgba(8, 29, 49, 0.28);
+    inset: 0;
+    position: fixed;
+    z-index: 130;
+}
+
+.dashboard-notifications-drawer {
+    background: #ffffff;
+    box-shadow: -24px 0 60px rgba(8, 36, 60, 0.18);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    margin-left: auto;
+    max-width: 460px;
+    width: min(100%, 460px);
+}
+
+.dashboard-notifications-drawer__header {
+    align-items: flex-start;
+    border-bottom: 1px solid rgba(12, 59, 102, 0.08);
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+    padding: 1.4rem 1.4rem 1rem;
+}
+
+.dashboard-notifications-drawer__header h2 {
+    color: #112f4a;
+    font-family: var(--font-serif);
+    font-size: 2rem;
+    margin: 0;
+}
+
+.dashboard-notifications-drawer__header p {
+    color: #64788b;
+    margin: 0.4rem 0 0;
+}
+
+.dashboard-notifications-drawer__actions {
+    align-items: center;
+    display: flex;
+    gap: 0.75rem;
+}
+
+.dashboard-notifications-drawer__mark-all,
+.dashboard-notifications-drawer__close {
+    align-items: center;
+    background: #12355a;
+    border: none;
+    border-radius: 12px;
+    color: #ffffff;
+    display: inline-flex;
+    font-weight: 700;
+    justify-content: center;
+    min-height: 42px;
+    padding: 0.75rem 1rem;
+}
+
+.dashboard-notifications-drawer__mark-all:disabled {
+    background: rgba(18, 53, 90, 0.38);
+    cursor: not-allowed;
+}
+
+.dashboard-notifications-drawer__close {
+    padding: 0;
+    width: 42px;
+}
+
+.dashboard-notifications-drawer__close svg {
+    height: 18px;
+    width: 18px;
+}
+
+.dashboard-notifications-drawer__body {
+    display: grid;
+    gap: 1rem;
+    overflow: auto;
+    padding: 1.3rem;
+}
+
+.dashboard-notifications-empty {
+    color: #64788b;
+    line-height: 1.7;
+    margin: 0;
+}
+
+.dashboard-notification-card {
+    align-items: flex-start;
+    background: #f7fafc;
+    border: 1px solid rgba(12, 59, 102, 0.08);
+    border-radius: 18px;
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 54px 1fr;
+    padding: 1rem;
+    text-align: left;
+    width: 100%;
+}
+
+.dashboard-notification-card--unread {
+    background: #edf4fb;
+    border-color: rgba(11, 76, 137, 0.14);
+}
+
+.dashboard-notification-card__icon {
+    align-items: center;
+    border-radius: 999px;
+    color: #ffffff;
+    display: inline-flex;
+    font-size: 1rem;
+    font-weight: 700;
+    height: 50px;
+    justify-content: center;
+    width: 50px;
+}
+
+.dashboard-notification-card__icon--shares,
+.dashboard-notification-card__icon--fees,
+.dashboard-notification-card__icon--loans,
+.dashboard-notification-card__icon--security,
+.dashboard-notification-card__icon--accounts,
+.dashboard-notification-card__icon--general {
+    background: linear-gradient(135deg, #0c5fa8, #0a4b86);
+}
+
+.dashboard-notification-card__content h3 {
+    color: #112f4a;
+    font-size: 1.3rem;
+    margin: 0.15rem 0 0;
+}
+
+.dashboard-notification-card__content p {
+    color: #4f6578;
+    line-height: 1.7;
+    margin: 0.55rem 0 0;
+}
+
+.dashboard-notification-card__meta,
+.dashboard-notification-card__footer {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    justify-content: space-between;
+}
+
+.dashboard-notification-card__category {
+    color: #0b4c89;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.dashboard-notification-card__badge {
+    background: #3c7cff;
+    border-radius: 999px;
+    color: #ffffff;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 0.25rem 0.55rem;
+}
+
+.dashboard-notification-card__footer {
+    color: #7a8c9b;
+    font-size: 0.9rem;
+    margin-top: 0.85rem;
+}
+
+.dashboard-notification-card__footer strong {
+    color: #0b4c89;
+    font-weight: 700;
+}
+
 .app-page-header {
     background: linear-gradient(135deg, #0c5fa8, #0a4b86);
     border-radius: 24px;
@@ -1752,6 +1965,11 @@ a:active {
 
     .dashboard-main {
         padding: 1rem;
+    }
+
+    .dashboard-notifications-drawer {
+        max-width: 100%;
+        width: 100%;
     }
 
     .member-savings-tabs,

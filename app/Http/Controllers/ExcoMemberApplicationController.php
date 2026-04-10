@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\MemberApplication;
 use App\Models\User;
 use App\Support\MemberAccountProvisioner;
+use App\Support\ProcessNotifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -12,7 +13,8 @@ use Illuminate\Validation\Rule;
 class ExcoMemberApplicationController extends Controller
 {
     public function __construct(
-        private readonly MemberAccountProvisioner $memberAccountProvisioner
+        private readonly MemberAccountProvisioner $memberAccountProvisioner,
+        private readonly ProcessNotifier $processNotifier
     ) {
     }
 
@@ -83,6 +85,18 @@ class ExcoMemberApplicationController extends Controller
 
             return $memberApplication->fresh(['cycle', 'reviewer', 'approvedMember']);
         });
+
+        if ($data['status'] === MemberApplication::STATUS_APPROVED) {
+            $this->processNotifier->notifyExco(
+                title: 'Member application approved',
+                message: "{$memberApplication->full_name}'s onboarding application has been approved and an account was provisioned.",
+                category: 'accounts',
+                actionUrl: '/dashboard/exco/applications',
+                actionLabel: 'View applications',
+                level: 'success',
+                meta: ['application_id' => $memberApplication->id],
+            );
+        }
 
         return response()->json([
             'message' => 'Application reviewed successfully.',

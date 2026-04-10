@@ -7,11 +7,17 @@ use App\Models\MembershipFee;
 use App\Models\MembershipFeeSubmission;
 use App\Models\SharePurchase;
 use App\Models\SharePaymentSubmission;
+use App\Support\ProcessNotifier;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class MemberSavingsController extends Controller
 {
+    public function __construct(
+        private readonly ProcessNotifier $processNotifier
+    ) {
+    }
+
     public function cycles()
     {
         return response()->json(
@@ -233,6 +239,19 @@ class MemberSavingsController extends Controller
             'member_note' => $data['member_note'] ?? null,
         ])->load(['cycle', 'reviewer', 'approvedSharePurchase']);
 
+        $this->processNotifier->notifyExco(
+            title: 'New share receipt submitted',
+            message: "{$member->full_name} submitted a share payment receipt for " . Carbon::parse($shareMonth)->format('F Y') . '.',
+            category: 'shares',
+            actionUrl: '/dashboard/exco/savings',
+            actionLabel: 'Review shares',
+            level: 'info',
+            meta: [
+                'member_id' => $member->id,
+                'submission_id' => $submission->id,
+            ],
+        );
+
         return response()->json([
             'message' => 'Share payment receipt submitted successfully and is awaiting EXCO verification.',
             'submission' => $submission,
@@ -312,6 +331,19 @@ class MemberSavingsController extends Controller
             'submitted_at' => now(),
             'member_note' => $data['member_note'] ?? null,
         ])->load(['cycle', 'reviewer', 'approvedMembershipFee']);
+
+        $this->processNotifier->notifyExco(
+            title: 'New membership fee receipt submitted',
+            message: "{$member->full_name} submitted a {$data['fee_type']} membership fee receipt for {$cycle->code}.",
+            category: 'fees',
+            actionUrl: '/dashboard/exco/savings',
+            actionLabel: 'Review fee receipts',
+            level: 'info',
+            meta: [
+                'member_id' => $member->id,
+                'submission_id' => $submission->id,
+            ],
+        );
 
         return response()->json([
             'message' => 'Membership fee receipt submitted successfully and is awaiting EXCO verification.',

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ExcoMemberApplicationController;
 use App\Http\Controllers\ExcoMemberController;
 use App\Http\Controllers\ExcoMembershipCycleController;
@@ -29,6 +30,9 @@ Route::middleware('auth.token')->group(function () {
     Route::get('/auth/me', [AuthController::class, 'me']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::post('/auth/change-password', [AuthController::class, 'changePassword']);
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markRead']);
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead']);
 
     Route::prefix('member')->group(function () {
         Route::get('/membership-cycles', [MemberSavingsController::class, 'cycles']);

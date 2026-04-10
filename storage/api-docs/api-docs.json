@@ -4553,6 +4553,144 @@
                 ]
             }
         },
+        "/api/notifications": {
+            "get": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "List the authenticated user in-app notifications",
+                "operationId": "b868cf58fd74fb6834fe47620df8f9d1",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 20
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Notifications loaded successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "unread_count": {
+                                            "type": "integer",
+                                            "example": 3
+                                        },
+                                        "notifications": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/AppNotification"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/notifications/{notification}/read": {
+            "patch": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Mark a single in-app notification as read",
+                "operationId": "6c7ed8d711be66acb2121a472cf4a0c5",
+                "parameters": [
+                    {
+                        "name": "notification",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Notification marked as read",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Notification marked as read."
+                                        },
+                                        "notification": {
+                                            "$ref": "#/components/schemas/AppNotification"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Not authorized to access this notification"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/notifications/mark-all-read": {
+            "post": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Mark all in-app notifications as read for the authenticated user",
+                "operationId": "acae4bfaf49a716685c36ef3a1f412ed",
+                "responses": {
+                    "200": {
+                        "description": "All notifications marked as read",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "All notifications marked as read."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/onboarding/current-cycle": {
             "get": {
                 "tags": [
@@ -4665,6 +4803,57 @@
     },
     "components": {
         "schemas": {
+            "AppNotification": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "example": "8d93f57f-6d6d-4df5-8f4d-6f5e0d951201"
+                    },
+                    "title": {
+                        "type": "string",
+                        "example": "Loan disbursed"
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "Your approved loan has been disbursed. Please view the receipt and confirm it in the app."
+                    },
+                    "category": {
+                        "type": "string",
+                        "example": "loans"
+                    },
+                    "action_url": {
+                        "type": "string",
+                        "example": "/dashboard/member/loans",
+                        "nullable": true
+                    },
+                    "action_label": {
+                        "type": "string",
+                        "example": "View receipt",
+                        "nullable": true
+                    },
+                    "level": {
+                        "type": "string",
+                        "example": "success"
+                    },
+                    "meta": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "read_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-04-10T11:25:00Z",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-04-10T11:20:00Z",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
             "Loan": {
                 "properties": {
                     "id": {
@@ -6292,6 +6481,10 @@
         {
             "name": "Member Shareouts",
             "description": "Member Shareouts"
+        },
+        {
+            "name": "Notifications",
+            "description": "Notifications"
         },
         {
             "name": "Onboarding",
