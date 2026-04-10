@@ -1,0 +1,406 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Loan;
+use App\Models\LoanGuarantorApproval;
+use App\Models\LoanRepaymentSubmission;
+use App\Models\MembershipCycle;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+
+class MemberLoanController extends Controller
+{
+    public function overview(Request $request)
+    {
+        $member = $request->user()?->member;
+
+        if (! $member) {
+            return response()->json([
+                'message' => 'This account is not linked to a member profile.',
+            ], 403);
+        }
+
+        $cycle = MembershipCycle::query()->where('is_active', true)->first();
+        $shareValue = (float) $member->sharePurchases()
+            ->whereIn('payment_status', ['paid', 'confirmed'])
+            ->sum('total_amount');
+
+        $loanMultiplier = $cycle ? (float) $cycle->loan_multiplier : 0;
+        $eligibleAmount = $shareValue * $loanMultiplier;
+        $requestBlockReason = null;
+
+        $activeLoan = $member->loans()
+            ->whereIn('status', ['pending_guarantor', 'guarantor_approved', 'approved', 'disbursed', 'partially_repaid'])
+            ->latest('id')
+            ->first();
+
+        if ($activeLoan) {
+            $requestBlockReason = 'You already have a loan that has not been fully repaid. Another loan can only be requested after the current one is cleared.';
+        } elseif ($eligibleAmount <= 0) {
+            $requestBlockReason = 'You are not yet eligible for a loan because there are no confirmed share purchases on your account.';
+        }
+
+        return response()->json([
+            'summary' => [
+                'share_value' => number_format($shareValue, 2, '.', ''),
+                'loan_multiplier' => number_format($loanMultiplier, 2, '.', ''),
+                'eligible_amount' => number_format($eligibleAmount, 2, '.', ''),
+                'can_request' => $eligibleAmount > 0 && ! $activeLoan,
+                'request_block_reason' => $requestBlockReason,
+                'active_loan' => $activeLoan?->load(['guarantor', 'guarantorApprovals']),
+            ],
+        ]);
+    }
+
+    public function index(Request $request)
+    {
+        $member = $request->user()?->member;
+
+        if (! $member) {
+            return response()->json([
+                'message' => 'This account is not linked to a member profile.',
+            ], 403);
+        }
+
+        $loans = $member->loans()
+            ->with(['cycle', 'guarantor', 'guarantorApprovals', 'disbursement', 'repayments'])
+            ->orderByDesc('requested_at')
+            ->orderByDesc('id')
+            ->paginate($this->perPage($request));
+
+        return response()->json($loans);
+    }
+
+    public function store(Request $request)
+    {
+        $member = $request->user()?->member;
+
+        if (! $member) {
+            return response()->json([
+                'message' => 'This account is not linked to a member profile.',
+            ], 403);
+        }
+
+        $cycle = MembershipCycle::query()->where('is_active', true)->first();
+
+        if (! $cycle) {
+            return response()->json([
+                'message' => 'No active membership cycle is configured.',
+            ], 422);
+        }
+
+        if ((int) now()->month === (int) $cycle->loan_pause_month) {
+            return response()->json([
+                'message' => 'Loan requests are paused for this month.',
+            ], 422);
+        }
+
+        if (! $this->canRequestLoan($member->id)) {
+            return response()->json([
+                'message' => 'You already have an active loan or a pending request in progress.',
+            ], 422);
+        }
+
+        $data = $request->validate([
+            'requested_amount' => ['required', 'numeric', 'min:1'],
+            'guarantor_member_id' => [
+                'required',
+                'integer',
+                'exists:members,id',
+                Rule::notIn([$member->id]),
+            ],
+            'purpose' => ['nullable', 'string'],
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        $eligibleAmount = $this->eligibleAmount($member->id, $cycle);
+
+        if ((float) $data['requested_amount'] > $eligibleAmount) {
+            return response()->json([
+                'message' => 'Requested amount exceeds your current loan eligibility.',
+            ], 422);
+        }
+
+        if ($this->guarantorHasActiveGuaranteedLoan((int) $data['guarantor_member_id'])) {
+            return response()->json([
+                'message' => 'Selected guarantor already has another unpaid guaranteed loan.',
+            ], 422);
+        }
+
+        $loan = DB::transaction(function () use ($cycle, $member, $data) {
+            $loan = Loan::create([
+                'membership_cycle_id' => $cycle->id,
+                'member_id' => $member->id,
+                'guarantor_member_id' => $data['guarantor_member_id'],
+                'requested_amount' => $data['requested_amount'],
+                'service_charge_rate' => $cycle->loan_service_charge_rate,
+                'status' => 'pending_guarantor',
+                'purpose' => $data['purpose'] ?? null,
+                'requested_at' => now(),
+                'notes' => $data['notes'] ?? null,
+            ]);
+
+            LoanGuarantorApproval::create([
+                'loan_id' => $loan->id,
+                'guarantor_member_id' => $data['guarantor_member_id'],
+                'status' => 'pending',
+            ]);
+
+            return $loan;
+        });
+
+        return response()->json([
+            'message' => 'Loan request submitted successfully.',
+            'loan' => $loan->load(['cycle', 'guarantor', 'guarantorApprovals']),
+        ], 201);
+    }
+
+    public function guarantorApprovals(Request $request)
+    {
+        $member = $request->user()?->member;
+
+        if (! $member) {
+            return response()->json([
+                'message' => 'This account is not linked to a member profile.',
+            ], 403);
+        }
+
+        $approvals = LoanGuarantorApproval::query()
+            ->with(['loan.member', 'loan.cycle'])
+            ->where('guarantor_member_id', $member->id)
+            ->orderByDesc('id')
+            ->paginate($this->perPage($request));
+
+        return response()->json($approvals);
+    }
+
+    public function availableGuarantors(Request $request)
+    {
+        $member = $request->user()?->member;
+
+        if (! $member) {
+            return response()->json([
+                'message' => 'This account is not linked to a member profile.',
+            ], 403);
+        }
+
+        $guarantors = DB::table('members')
+            ->select(['id', 'member_number', 'full_name', 'email'])
+            ->where('id', '!=', $member->id)
+            ->where('membership_status', 'active')
+            ->whereNotExists(function ($query) {
+                $query->selectRaw('1')
+                    ->from('loans')
+                    ->whereColumn('loans.guarantor_member_id', 'members.id')
+                    ->whereIn('loans.status', ['pending_guarantor', 'guarantor_approved', 'approved', 'disbursed', 'partially_repaid']);
+            })
+            ->orderBy('full_name')
+            ->get();
+
+        return response()->json($guarantors);
+    }
+
+    public function respondToGuarantorApproval(Request $request, LoanGuarantorApproval $loanGuarantorApproval)
+    {
+        $member = $request->user()?->member;
+
+        if (! $member || $loanGuarantorApproval->guarantor_member_id !== $member->id) {
+            return response()->json([
+                'message' => 'You are not authorized to respond to this guarantor request.',
+            ], 403);
+        }
+
+        if ($loanGuarantorApproval->status !== 'pending') {
+            return response()->json([
+                'message' => 'This guarantor request has already been responded to.',
+            ], 422);
+        }
+
+        $data = $request->validate([
+            'status' => ['required', Rule::in(['approved', 'rejected'])],
+            'response_note' => ['nullable', 'string'],
+        ]);
+
+        if ($data['status'] === 'approved' && $this->guarantorHasActiveGuaranteedLoan($member->id, $loanGuarantorApproval->loan_id)) {
+            return response()->json([
+                'message' => 'You already guarantee another unpaid loan and cannot approve this one.',
+            ], 422);
+        }
+
+        $approval = DB::transaction(function () use ($loanGuarantorApproval, $data) {
+            $loanGuarantorApproval->update([
+                'status' => $data['status'],
+                'responded_at' => now(),
+                'response_note' => $data['response_note'] ?? null,
+            ]);
+
+            $loan = $loanGuarantorApproval->loan;
+
+            $loan->update([
+                'status' => $data['status'] === 'approved' ? 'guarantor_approved' : 'rejected',
+            ]);
+
+            return $loanGuarantorApproval->fresh(['loan.member', 'loan.cycle']);
+        });
+
+        return response()->json([
+            'message' => 'Guarantor response recorded successfully.',
+            'approval' => $approval,
+        ]);
+    }
+
+    public function destroy(Request $request, Loan $loan)
+    {
+        $member = $request->user()?->member;
+
+        if (! $member || $loan->member_id !== $member->id) {
+            return response()->json([
+                'message' => 'You are not authorized to delete this loan request.',
+            ], 403);
+        }
+
+        if (in_array($loan->status, ['disbursed', 'partially_repaid', 'repaid'], true) || $loan->disbursement()->exists()) {
+            return response()->json([
+                'message' => 'A loan request can only be deleted before it is disbursed.',
+            ], 422);
+        }
+
+        $loan->delete();
+
+        return response()->json([
+            'message' => 'Loan request deleted successfully.',
+        ]);
+    }
+
+    public function repaymentSubmissions(Request $request)
+    {
+        $member = $request->user()?->member;
+
+        if (! $member) {
+            return response()->json([
+                'message' => 'This account is not linked to a member profile.',
+            ], 403);
+        }
+
+        $submissions = LoanRepaymentSubmission::query()
+            ->with(['loan.cycle', 'reviewer', 'approvedLoanRepayment'])
+            ->where('member_id', $member->id)
+            ->when($request->filled('status'), fn ($query) => $query->where('status', $request->string('status')))
+            ->orderByDesc('submitted_at')
+            ->orderByDesc('id')
+            ->paginate($this->perPage($request));
+
+        return response()->json($submissions);
+    }
+
+    public function storeRepaymentSubmission(Request $request)
+    {
+        $member = $request->user()?->member;
+
+        if (! $member) {
+            return response()->json([
+                'message' => 'This account is not linked to a member profile.',
+            ], 403);
+        }
+
+        $data = $request->validate([
+            'loan_id' => ['required', 'integer', 'exists:loans,id'],
+            'amount_paid' => ['required', 'numeric', 'min:0.01'],
+            'receipt' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120'],
+            'member_note' => ['nullable', 'string'],
+        ]);
+
+        /** @var Loan $loan */
+        $loan = Loan::query()
+            ->with('member')
+            ->findOrFail($data['loan_id']);
+
+        if ($loan->member_id !== $member->id) {
+            return response()->json([
+                'message' => 'You can only submit a repayment receipt for your own loan.',
+            ], 403);
+        }
+
+        if (! in_array($loan->status, ['disbursed', 'partially_repaid'], true)) {
+            return response()->json([
+                'message' => 'Repayment receipts can only be submitted for a disbursed loan that is still active.',
+            ], 422);
+        }
+
+        if ((float) ($loan->outstanding_amount ?? 0) <= 0) {
+            return response()->json([
+                'message' => 'This loan is already fully repaid.',
+            ], 422);
+        }
+
+        $pendingSubmissionExists = LoanRepaymentSubmission::query()
+            ->where('loan_id', $loan->id)
+            ->where('member_id', $member->id)
+            ->where('status', 'pending')
+            ->exists();
+
+        if ($pendingSubmissionExists) {
+            return response()->json([
+                'message' => 'A repayment receipt for this loan is already waiting for EXCO review.',
+            ], 422);
+        }
+
+        $receipt = $request->file('receipt');
+        $disk = (string) config('jds.receipt_disk', 'public');
+        $path = $receipt->store('loan-repayment-receipts', $disk);
+
+        $submission = LoanRepaymentSubmission::query()->create([
+            'loan_id' => $loan->id,
+            'member_id' => $member->id,
+            'amount_paid' => $data['amount_paid'],
+            'receipt_path' => $path,
+            'receipt_disk' => $disk,
+            'receipt_original_name' => $receipt->getClientOriginalName(),
+            'receipt_mime_type' => $receipt->getMimeType(),
+            'receipt_size_bytes' => $receipt->getSize(),
+            'status' => 'pending',
+            'submitted_at' => now(),
+            'member_note' => $data['member_note'] ?? null,
+        ])->load(['loan.cycle', 'reviewer', 'approvedLoanRepayment']);
+
+        return response()->json([
+            'message' => 'Loan repayment receipt submitted successfully for EXCO review.',
+            'submission' => $submission,
+        ], 201);
+    }
+
+    private function canRequestLoan(int $memberId): bool
+    {
+        return ! Loan::query()
+            ->where('member_id', $memberId)
+            ->whereIn('status', ['pending_guarantor', 'guarantor_approved', 'approved', 'disbursed', 'partially_repaid'])
+            ->exists();
+    }
+
+    private function guarantorHasActiveGuaranteedLoan(int $guarantorMemberId, ?int $ignoreLoanId = null): bool
+    {
+        return Loan::query()
+            ->where('guarantor_member_id', $guarantorMemberId)
+            ->when($ignoreLoanId, fn ($query) => $query->whereKeyNot($ignoreLoanId))
+            ->whereIn('status', ['pending_guarantor', 'guarantor_approved', 'approved', 'disbursed', 'partially_repaid'])
+            ->exists();
+    }
+
+    private function eligibleAmount(int $memberId, MembershipCycle $cycle): float
+    {
+        $shareValue = (float) DB::table('share_purchases')
+            ->where('member_id', $memberId)
+            ->whereIn('payment_status', ['paid', 'confirmed'])
+            ->sum('total_amount');
+
+        return $shareValue * (float) $cycle->loan_multiplier;
+    }
+
+    private function perPage(Request $request): int
+    {
+        return min(max($request->integer('per_page', 10), 1), 100);
+    }
+}
