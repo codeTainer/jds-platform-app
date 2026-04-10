@@ -364,6 +364,16 @@ function MemberLoansSection() {
         }
     }
 
+    async function confirmLoanDisbursement(loanId: number) {
+        try {
+            await api.patch(`/api/member/loans/${loanId}/confirm-disbursement`);
+            showToast('Loan receipt confirmed successfully.', 'success');
+            await Promise.all([loadOverview(), loadTables(loanPage, approvalPage, repaymentSubmissionPage)]);
+        } catch (requestError: any) {
+            showToast(requestError.response?.data?.message ?? 'Unable to confirm this loan disbursement right now.', 'error');
+        }
+    }
+
     async function exportLoans(format: TableExportFormat) {
         const { data } = await api.get<PaginatedResponse<Loan>>('/api/member/loans', { params: { page: 1, per_page: 100 } });
         downloadTableExport(format, 'my-loans.csv', ['Requested Amount', 'Approved Amount', 'Outstanding', 'Status', 'Guarantor', 'Requested At', 'Due On'], data.data.map((loan) => [
@@ -498,6 +508,24 @@ function MemberLoansSection() {
                                         <div>Total due: {formatCurrency(overview.summary.active_loan.total_due_amount ?? 0)}</div>
                                         <div>Due on: {formatDate(overview.summary.active_loan.due_on)}</div>
                                     </div>
+                                    {overview.summary.active_loan.disbursement ? (
+                                        <div className="mt-4 grid gap-3 text-[0.98rem] text-[var(--muted)] md:grid-cols-3">
+                                            <div>Disbursement status: {overview.summary.active_loan.disbursement.status.replace('_', ' ')}</div>
+                                            <div>Disbursed at: {formatDate(overview.summary.active_loan.disbursement.disbursed_at)}</div>
+                                            <div>
+                                                Receipt: {overview.summary.active_loan.disbursement.receipt_url ? (
+                                                    <a className="landing-btn landing-btn--secondary" href={overview.summary.active_loan.disbursement.receipt_url} rel="noreferrer" target="_blank">View receipt</a>
+                                                ) : 'No receipt'}
+                                            </div>
+                                        </div>
+                                    ) : null}
+                                    {overview.summary.active_loan.disbursement?.status === 'pending_member_confirmation' ? (
+                                        <div className="mt-4">
+                                            <button className="rounded-full bg-[var(--accent)] px-5 py-3 text-[0.98rem] font-semibold text-white" onClick={() => void confirmLoanDisbursement(overview.summary.active_loan!.id)} type="button">
+                                                Confirm loan receipt
+                                            </button>
+                                        </div>
+                                    ) : null}
                                 </div>
                                 <label className="app-field">
                                     <span className="app-field__label">Amount Paid</span>
@@ -574,14 +602,28 @@ function MemberLoansSection() {
                                 { key: 'outstanding_amount', header: 'Outstanding', render: (loan) => formatCurrency(loan.outstanding_amount ?? 0) },
                                 { key: 'guarantor', header: 'Guarantor', render: (loan) => loan.guarantor?.full_name ?? 'Not set' },
                                 { key: 'status', header: 'Status', render: (loan) => loan.status.replace('_', ' ') },
+                                { key: 'receipt', header: 'Disbursement Receipt', render: (loan) => loan.disbursement?.receipt_url ? <a className="landing-btn landing-btn--secondary" href={loan.disbursement.receipt_url} rel="noreferrer" target="_blank">View receipt</a> : 'Not posted' },
+                                { key: 'disbursement_status', header: 'Receipt Status', render: (loan) => loan.disbursement?.status ? loan.disbursement.status.replace('_', ' ') : 'Not posted' },
                                 { key: 'due_on', header: 'Due On', render: (loan) => formatDate(loan.due_on) },
                                 {
                                     key: 'action',
                                     header: 'Action',
                                     exportable: false,
-                                    render: (loan) => !['disbursed', 'partially_repaid', 'repaid'].includes(loan.status)
-                                        ? <button className="rounded-full bg-[var(--danger)] px-3 py-2 text-[0.9rem] font-semibold text-white" onClick={() => void deleteLoan(loan.id)} type="button">Delete</button>
-                                        : 'Locked',
+                                    render: (loan) => {
+                                        if (loan.disbursement?.status === 'pending_member_confirmation') {
+                                            return (
+                                                <button className="rounded-full bg-[var(--accent)] px-3 py-2 text-[0.9rem] font-semibold text-white" onClick={() => void confirmLoanDisbursement(loan.id)} type="button">
+                                                    Confirm receipt
+                                                </button>
+                                            );
+                                        }
+
+                                        if (!['disbursed', 'partially_repaid', 'repaid'].includes(loan.status)) {
+                                            return <button className="rounded-full bg-[var(--danger)] px-3 py-2 text-[0.9rem] font-semibold text-white" onClick={() => void deleteLoan(loan.id)} type="button">Delete</button>;
+                                        }
+
+                                        return 'Locked';
+                                    },
                                 },
                             ]}
                             currentPage={loans.current_page}

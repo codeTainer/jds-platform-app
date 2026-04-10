@@ -477,20 +477,20 @@
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "required": [
-                                    "payment_method"
+                                    "payment_method",
+                                    "receipt"
                                 ],
                                 "properties": {
                                     "payment_method": {
                                         "type": "string",
                                         "example": "bank_transfer"
                                     },
-                                    "payment_reference": {
+                                    "receipt": {
                                         "type": "string",
-                                        "example": "TRX-20260402-184533",
-                                        "nullable": true
+                                        "format": "binary"
                                     },
                                     "notes": {
                                         "type": "string",
@@ -3283,6 +3283,60 @@
                 ]
             }
         },
+        "/api/member/loans/{loan}/confirm-disbursement": {
+            "patch": {
+                "tags": [
+                    "Member Loans"
+                ],
+                "summary": "Confirm loan disbursement receipt as the authenticated member",
+                "operationId": "558bd484ac77171a06e8f502bc7fca04",
+                "parameters": [
+                    {
+                        "name": "loan",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Loan disbursement confirmed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Loan receipt confirmed successfully."
+                                        },
+                                        "loan": {
+                                            "$ref": "#/components/schemas/Loan"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Not authorized to confirm this loan disbursement"
+                    },
+                    "422": {
+                        "description": "Disbursement cannot be confirmed in its current state"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/member/loan-guarantors": {
             "get": {
                 "tags": [
@@ -4809,9 +4863,40 @@
                         "format": "date-time",
                         "example": "2026-04-02T12:30:00Z"
                     },
-                    "payment_reference": {
+                    "member_confirmed_at": {
                         "type": "string",
-                        "example": "TRX-20260402-184533",
+                        "format": "date-time",
+                        "example": "2026-04-02T13:05:00Z",
+                        "nullable": true
+                    },
+                    "receipt_path": {
+                        "type": "string",
+                        "example": "loan-disbursement-receipts/example.pdf",
+                        "nullable": true
+                    },
+                    "receipt_disk": {
+                        "type": "string",
+                        "example": "public",
+                        "nullable": true
+                    },
+                    "receipt_original_name": {
+                        "type": "string",
+                        "example": "loan-transfer-receipt.pdf",
+                        "nullable": true
+                    },
+                    "receipt_mime_type": {
+                        "type": "string",
+                        "example": "application/pdf",
+                        "nullable": true
+                    },
+                    "receipt_size_bytes": {
+                        "type": "integer",
+                        "example": 245612,
+                        "nullable": true
+                    },
+                    "receipt_url": {
+                        "type": "string",
+                        "example": "/storage/loan-disbursement-receipts/example.pdf",
                         "nullable": true
                     },
                     "notes": {

@@ -122,6 +122,34 @@ class MemberLoanEndpoints
     {
     }
 
+    #[OA\Patch(
+        path: '/api/member/loans/{loan}/confirm-disbursement',
+        summary: 'Confirm loan disbursement receipt as the authenticated member',
+        security: [['bearerAuth' => []]],
+        tags: ['Member Loans'],
+        parameters: [
+            new OA\Parameter(name: 'loan', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Loan disbursement confirmed',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'Loan receipt confirmed successfully.'),
+                        new OA\Property(property: 'loan', ref: '#/components/schemas/Loan'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Not authorized to confirm this loan disbursement'),
+            new OA\Response(response: 422, description: 'Disbursement cannot be confirmed in its current state'),
+        ]
+    )]
+    public function confirmDisbursement(): void
+    {
+    }
+
     #[OA\Get(
         path: '/api/member/loan-guarantors',
         summary: 'List available guarantors for the authenticated member',

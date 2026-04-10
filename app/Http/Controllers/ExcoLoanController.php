@@ -110,18 +110,27 @@ class ExcoLoanController extends Controller
 
         $data = $request->validate([
             'payment_method' => ['required', 'string', 'max:50'],
-            'payment_reference' => ['nullable', 'string', 'max:255'],
+            'receipt' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120'],
             'notes' => ['nullable', 'string'],
         ]);
 
-        $updatedLoan = DB::transaction(function () use ($loan, $request, $data) {
+        $receipt = $request->file('receipt');
+        $disk = (string) config('jds.receipt_disk', 'public');
+        $path = $receipt->store('loan-disbursement-receipts', $disk);
+
+        $updatedLoan = DB::transaction(function () use ($loan, $request, $data, $disk, $path, $receipt) {
             $loan->disbursement()->create([
                 'disbursed_by' => $request->user()?->id,
                 'amount' => $loan->approved_amount,
                 'payment_method' => $data['payment_method'],
                 'status' => 'pending_member_confirmation',
                 'disbursed_at' => now(),
-                'payment_reference' => $data['payment_reference'] ?? null,
+                'receipt_path' => $path,
+                'receipt_disk' => $disk,
+                'receipt_original_name' => $receipt->getClientOriginalName(),
+                'receipt_mime_type' => $receipt->getMimeType(),
+                'receipt_size_bytes' => $receipt->getSize(),
+                'payment_reference' => null,
                 'notes' => $data['notes'] ?? null,
             ]);
 

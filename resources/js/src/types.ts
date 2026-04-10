@@ -191,7 +191,26 @@ export interface Loan {
     guarantor?: Member | null;
     cycle?: MembershipCycle | null;
     guarantor_approvals?: LoanGuarantorApproval[] | null;
+    disbursement?: LoanDisbursement | null;
     repayment_submissions?: LoanRepaymentSubmission[] | null;
+}
+
+export interface LoanDisbursement {
+    id: number;
+    loan_id: number;
+    disbursed_by?: number | null;
+    amount: number | string;
+    payment_method: string;
+    status: 'pending_member_confirmation' | 'member_confirmed';
+    disbursed_at?: string | null;
+    member_confirmed_at?: string | null;
+    receipt_path?: string | null;
+    receipt_disk?: string | null;
+    receipt_original_name?: string | null;
+    receipt_mime_type?: string | null;
+    receipt_size_bytes?: number | null;
+    receipt_url?: string | null;
+    notes?: string | null;
 }
 
 export interface LoanOverview {

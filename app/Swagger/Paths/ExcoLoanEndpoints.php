@@ -121,13 +121,16 @@ class ExcoLoanEndpoints
         ],
         requestBody: new OA\RequestBody(
             required: true,
-            content: new OA\JsonContent(
-                required: ['payment_method'],
-                properties: [
-                    new OA\Property(property: 'payment_method', type: 'string', example: 'bank_transfer'),
-                    new OA\Property(property: 'payment_reference', type: 'string', nullable: true, example: 'TRX-20260402-184533'),
-                    new OA\Property(property: 'notes', type: 'string', nullable: true, example: 'Transferred to member account'),
-                ]
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['payment_method', 'receipt'],
+                    properties: [
+                        new OA\Property(property: 'payment_method', type: 'string', example: 'bank_transfer'),
+                        new OA\Property(property: 'receipt', type: 'string', format: 'binary'),
+                        new OA\Property(property: 'notes', type: 'string', nullable: true, example: 'Transferred to member account'),
+                    ]
+                )
             )
         ),
         responses: [

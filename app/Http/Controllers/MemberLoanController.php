@@ -50,7 +50,7 @@ class MemberLoanController extends Controller
                 'eligible_amount' => number_format($eligibleAmount, 2, '.', ''),
                 'can_request' => $eligibleAmount > 0 && ! $activeLoan,
                 'request_block_reason' => $requestBlockReason,
-                'active_loan' => $activeLoan?->load(['guarantor', 'guarantorApprovals']),
+                'active_loan' => $activeLoan?->load(['guarantor', 'guarantorApprovals', 'disbursement']),
             ],
         ]);
     }
@@ -272,6 +272,41 @@ class MemberLoanController extends Controller
 
         return response()->json([
             'message' => 'Loan request deleted successfully.',
+        ]);
+    }
+
+    public function confirmDisbursement(Request $request, Loan $loan)
+    {
+        $member = $request->user()?->member;
+
+        if (! $member || $loan->member_id !== $member->id) {
+            return response()->json([
+                'message' => 'You are not authorized to confirm this loan disbursement.',
+            ], 403);
+        }
+
+        $disbursement = $loan->disbursement;
+
+        if (! $disbursement) {
+            return response()->json([
+                'message' => 'No disbursement receipt has been posted for this loan yet.',
+            ], 422);
+        }
+
+        if ($disbursement->member_confirmed_at) {
+            return response()->json([
+                'message' => 'This loan disbursement has already been confirmed.',
+            ], 422);
+        }
+
+        $disbursement->update([
+            'status' => 'member_confirmed',
+            'member_confirmed_at' => now(),
+        ]);
+
+        return response()->json([
+            'message' => 'Loan receipt confirmed successfully.',
+            'loan' => $loan->fresh(['cycle', 'guarantor', 'guarantorApprovals', 'disbursement', 'repayments']),
         ]);
     }
 

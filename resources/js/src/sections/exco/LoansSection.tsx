@@ -27,13 +27,11 @@ function ViewIcon() {
 
 interface DisbursementForm {
     payment_method: string;
-    payment_reference: string;
     notes: string;
 }
 
 const initialDisbursementForm: DisbursementForm = {
     payment_method: 'bank_transfer',
-    payment_reference: '',
     notes: '',
 };
 
@@ -69,6 +67,7 @@ export function LoansSection() {
     const [requestedMonthFilter, setRequestedMonthFilter] = useState('');
     const [repaymentSubmissionStatusFilter, setRepaymentSubmissionStatusFilter] = useState('');
     const [disbursementForm, setDisbursementForm] = useState<DisbursementForm>(initialDisbursementForm);
+    const [disbursementReceiptFile, setDisbursementReceiptFile] = useState<File | null>(null);
 
     const loadLoans = async (nextPage = page) => {
         const { data } = await api.get<PaginatedResponse<Loan>>('/api/exco/loans', {
@@ -150,13 +149,26 @@ export function LoansSection() {
         event.preventDefault();
         if (!selectedLoan) return;
 
+        if (!disbursementReceiptFile) {
+            showToast('Please upload the disbursement receipt before posting this loan.', 'error');
+            return;
+        }
+
         try {
-            await api.post(`/api/exco/loans/${selectedLoan.id}/disburse`, {
-                payment_method: disbursementForm.payment_method,
-                payment_reference: disbursementForm.payment_reference || null,
-                notes: disbursementForm.notes || null,
+            const payload = new FormData();
+            payload.append('payment_method', disbursementForm.payment_method);
+            payload.append('receipt', disbursementReceiptFile);
+            if (disbursementForm.notes) {
+                payload.append('notes', disbursementForm.notes);
+            }
+
+            await api.post(`/api/exco/loans/${selectedLoan.id}/disburse`, payload, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
             });
             setDisbursementForm(initialDisbursementForm);
+            setDisbursementReceiptFile(null);
             showToast('Loan disbursed successfully.', 'success');
             await loadLoans(page);
         } catch (requestError: any) {
@@ -305,10 +317,32 @@ export function LoansSection() {
                         <Panel eyebrow="Disbursement" title="Post a loan disbursement">
                             <form className="grid gap-4" onSubmit={(event) => void disburseLoan(event)}>
                                 <input className="rounded-[20px] border border-[rgba(23,55,45,0.14)] bg-white px-4 py-3.5 text-[1rem]" onChange={(event) => setDisbursementForm((current) => ({ ...current, payment_method: event.target.value }))} placeholder="Payment method" value={disbursementForm.payment_method} />
-                                <input className="rounded-[20px] border border-[rgba(23,55,45,0.14)] bg-white px-4 py-3.5 text-[1rem]" onChange={(event) => setDisbursementForm((current) => ({ ...current, payment_reference: event.target.value }))} placeholder="Payment reference" value={disbursementForm.payment_reference} />
+                                <label className="app-field">
+                                    <span className="app-field__label">Disbursement receipt</span>
+                                    <input
+                                        accept=".jpg,.jpeg,.png,.webp,.pdf"
+                                        className="app-field__control"
+                                        onChange={(event) => setDisbursementReceiptFile(event.target.files?.[0] ?? null)}
+                                        required
+                                        type="file"
+                                    />
+                                </label>
                                 <textarea className="min-h-24 rounded-[20px] border border-[rgba(23,55,45,0.14)] bg-white px-4 py-3.5 text-[1rem]" onChange={(event) => setDisbursementForm((current) => ({ ...current, notes: event.target.value }))} placeholder="Notes" value={disbursementForm.notes} />
                                 <button className="rounded-full bg-[var(--accent)] px-5 py-3.5 text-[1rem] font-semibold text-white" disabled={selectedLoan.status !== 'approved'} type="submit">Disburse loan</button>
                             </form>
+
+                            {selectedLoan.disbursement ? (
+                                <div className="mt-4 grid gap-2 text-[0.96rem] text-[var(--muted)]">
+                                    <div>Disbursement status: {selectedLoan.disbursement.status.replace('_', ' ')}</div>
+                                    <div>Disbursed at: {formatDate(selectedLoan.disbursement.disbursed_at)}</div>
+                                    <div>Member confirmed at: {formatDate(selectedLoan.disbursement.member_confirmed_at)}</div>
+                                    <div>
+                                        Receipt: {selectedLoan.disbursement.receipt_url ? (
+                                            <a className="landing-btn landing-btn--secondary" href={selectedLoan.disbursement.receipt_url} rel="noreferrer" target="_blank">View receipt</a>
+                                        ) : 'No receipt'}
+                                    </div>
+                                </div>
+                            ) : null}
                         </Panel>
                     </div>
                 </div>

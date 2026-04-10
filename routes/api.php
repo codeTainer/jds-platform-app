@@ -45,6 +45,7 @@ Route::middleware('auth.token')->group(function () {
         Route::get('/loans', [MemberLoanController::class, 'index']);
         Route::post('/loans', [MemberLoanController::class, 'store']);
         Route::delete('/loans/{loan}', [MemberLoanController::class, 'destroy']);
+        Route::patch('/loans/{loan}/confirm-disbursement', [MemberLoanController::class, 'confirmDisbursement']);
         Route::get('/loan-repayment-submissions', [MemberLoanController::class, 'repaymentSubmissions']);
         Route::post('/loan-repayment-submissions', [MemberLoanController::class, 'storeRepaymentSubmission']);
         Route::get('/loan-guarantors', [MemberLoanController::class, 'availableGuarantors']);
