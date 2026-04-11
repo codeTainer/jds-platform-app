@@ -38,6 +38,18 @@ class AuthenticateApiToken
             ], 401);
         }
 
+        $idleTimeoutMinutes = max((int) config('jds.idle_timeout_minutes', 5), 1);
+        $activityReference = $accessToken->last_used_at ?? $accessToken->created_at;
+
+        if ($activityReference && $activityReference->copy()->addMinutes($idleTimeoutMinutes)->isPast()) {
+            $accessToken->delete();
+
+            return response()->json([
+                'message' => "Your session expired after {$idleTimeoutMinutes} minutes of inactivity. Please sign in again.",
+                'idle_timeout' => true,
+            ], 401);
+        }
+
         $accessToken->forceFill([
             'last_used_at' => now(),
         ])->save();

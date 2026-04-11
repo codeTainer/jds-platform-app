@@ -166,6 +166,10 @@ a:active {
     width: 100%;
 }
 
+.app-field__control--with-icon {
+    padding-left: 3rem;
+}
+
 .app-field__control--password {
     padding-right: 3.4rem;
 }
@@ -173,6 +177,10 @@ a:active {
 .app-field__control:focus {
     border-color: rgba(11, 76, 137, 0.4);
     box-shadow: 0 0 0 4px rgba(11, 76, 137, 0.1);
+}
+
+.app-field__control::placeholder {
+    font-size: 1.04rem;
 }
 
 .app-field__toggle {
@@ -193,6 +201,27 @@ a:active {
     margin: auto 0;
     transition: color 180ms ease, transform 180ms ease;
     width: 2.5rem;
+}
+
+.app-field__icon {
+    align-items: center;
+    color: #688097;
+    display: inline-flex;
+    height: 1rem;
+    justify-content: center;
+    left: 1rem;
+    pointer-events: none;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    margin: auto 0;
+    width: 1rem;
+}
+
+.app-field__icon svg {
+    display: block;
+    height: 1rem;
+    width: 1rem;
 }
 
 .app-field__toggle svg {
@@ -827,6 +856,21 @@ a:active {
     display: grid;
     gap: 1rem;
     margin-top: 1.7rem;
+}
+
+.landing-remember {
+    align-items: center;
+    color: #51697d;
+    display: inline-flex;
+    gap: 0.65rem;
+    font-size: 0.96rem;
+    font-weight: 600;
+}
+
+.landing-remember input {
+    accent-color: #0b4c89;
+    height: 16px;
+    width: 16px;
 }
 
 .landing-section {

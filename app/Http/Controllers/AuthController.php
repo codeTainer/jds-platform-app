@@ -41,6 +41,7 @@ class AuthController extends Controller
             'user_id' => $user->id,
             'name' => 'react-client',
             'token_hash' => hash('sha256', $plainTextToken),
+            'last_used_at' => now(),
         ]);
 
         return response()->json([

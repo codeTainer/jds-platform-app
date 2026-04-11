@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 
 interface FieldProps {
     label: string;
@@ -6,9 +7,10 @@ interface FieldProps {
     onChange: (value: string) => void;
     type?: string;
     placeholder?: string;
+    icon?: ReactNode;
 }
 
-export function Field({ label, value, onChange, type = 'text', placeholder }: FieldProps) {
+export function Field({ label, value, onChange, type = 'text', placeholder, icon }: FieldProps) {
     const [revealed, setRevealed] = useState(false);
     const isPasswordField = type === 'password';
     const inputType = isPasswordField && revealed ? 'text' : type;
@@ -18,12 +20,17 @@ export function Field({ label, value, onChange, type = 'text', placeholder }: Fi
             <span className="app-field__label">{label}</span>
             <span className="app-field__input-wrap">
                 <input
-                    className={`app-field__control${isPasswordField ? ' app-field__control--password' : ''}`}
+                    className={`app-field__control${icon ? ' app-field__control--with-icon' : ''}${isPasswordField ? ' app-field__control--password' : ''}`}
                     onChange={(event) => onChange(event.target.value)}
                     placeholder={placeholder}
                     type={inputType}
                     value={value}
                 />
+                {icon ? (
+                    <span className="app-field__icon" aria-hidden="true">
+                        {icon}
+                    </span>
+                ) : null}
                 {isPasswordField ? (
                     <button
                         aria-label={revealed ? 'Hide password' : 'Show password'}

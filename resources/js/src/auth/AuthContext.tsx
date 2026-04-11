@@ -6,6 +6,7 @@ import type { LoginResponse, User } from "../types";
 interface LoginForm {
     email: string;
     password: string;
+    remember?: boolean;
 }
 
 interface AuthContextValue {
@@ -35,6 +36,13 @@ const EXCO_ROLES = new Set([
     "support",
 ]);
 
+const idleTimeoutMinutes = Math.max(
+    Number(import.meta.env.VITE_JDS_IDLE_TIMEOUT_MINUTES ?? 5),
+    1,
+);
+const idleTimeoutMs = idleTimeoutMinutes * 60 * 1000;
+const idleLogoutNoticeKey = "jds_idle_logout_notice";
+
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [booting, setBooting] = useState(true);
@@ -53,6 +61,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .finally(() => setBooting(false));
     }, []);
 
+    useEffect(() => {
+        if (!user) {
+            return;
+        }
+
+        let timeoutId = 0;
+
+        const performIdleLogout = async () => {
+            window.sessionStorage.setItem(
+                idleLogoutNoticeKey,
+                `You were signed out after ${idleTimeoutMinutes} minutes of inactivity.`,
+            );
+
+            try {
+                await api.post("/api/auth/logout");
+            } catch {
+                // Ignore logout cleanup errors during idle expiry.
+            } finally {
+                applyToken(null);
+                setUser(null);
+            }
+        };
+
+        const resetIdleTimer = () => {
+            window.clearTimeout(timeoutId);
+            timeoutId = window.setTimeout(() => {
+                void performIdleLogout();
+            }, idleTimeoutMs);
+        };
+
+        const activityEvents: Array<keyof WindowEventMap> = [
+            "click",
+            "keydown",
+            "mousemove",
+            "scroll",
+            "touchstart",
+        ];
+
+        activityEvents.forEach((eventName) => {
+            window.addEventListener(eventName, resetIdleTimer, { passive: true });
+        });
+
+        resetIdleTimer();
+
+        return () => {
+            window.clearTimeout(timeoutId);
+
+            activityEvents.forEach((eventName) => {
+                window.removeEventListener(eventName, resetIdleTimer);
+            });
+        };
+    }, [user]);
+
     const value = useMemo<AuthContextValue>(
         () => ({
             user,
@@ -66,7 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     "/api/auth/login",
                     form,
                 );
-                applyToken(data.token);
+                applyToken(data.token, form.remember ?? true);
                 setUser(data.user);
             },
             async changePassword(form) {

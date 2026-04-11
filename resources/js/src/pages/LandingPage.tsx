@@ -6,6 +6,52 @@ import { Notice } from "../components/ui/Notice";
 import { api } from "../lib/api";
 import { SignupModal } from "../sections/SignupModal";
 
+function EmailIcon() {
+    return (
+        <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+            <path
+                d="M4.5 6.75h15a1.5 1.5 0 0 1 1.5 1.5v7.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 15.75v-7.5a1.5 1.5 0 0 1 1.5-1.5Z"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.7"
+            />
+            <path
+                d="m4 8 8 6 8-6"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.7"
+            />
+        </svg>
+    );
+}
+
+function LockIcon() {
+    return (
+        <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+            <path
+                d="M7.5 10.5V8a4.5 4.5 0 1 1 9 0v2.5"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.7"
+            />
+            <rect
+                x="5.25"
+                y="10.5"
+                width="13.5"
+                height="9"
+                rx="2"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.7"
+            />
+        </svg>
+    );
+}
+
 interface PublicSummaryResponse {
     summary: {
         total_members: number;
@@ -246,8 +292,10 @@ export function LandingPage() {
     const [form, setForm] = useState({
         email: "",
         password: "",
+        remember: true,
     });
     const [error, setError] = useState("");
+    const [idleNotice, setIdleNotice] = useState("");
     const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
@@ -267,6 +315,15 @@ export function LandingPage() {
                         "Unable to load public platform summary right now.",
                 ),
             );
+    }, []);
+
+    useEffect(() => {
+        const message = window.sessionStorage.getItem("jds_idle_logout_notice");
+
+        if (message) {
+            setIdleNotice(message);
+            window.sessionStorage.removeItem("jds_idle_logout_notice");
+        }
     }, []);
 
     const activeSlide = slides[currentSlide];
@@ -405,6 +462,8 @@ export function LandingPage() {
                                             email: value,
                                         }))
                                     }
+                                    icon={<EmailIcon />}
+                                    placeholder="Enter your email address"
                                     type="email"
                                     value={form.email}
                                 />
@@ -416,18 +475,36 @@ export function LandingPage() {
                                             password: value,
                                         }))
                                     }
+                                    icon={<LockIcon />}
+                                    placeholder="........"
                                     type="password"
                                     value={form.password}
                                 />
+                                <label className="landing-remember">
+                                    <input
+                                        checked={form.remember}
+                                        onChange={(event) =>
+                                            setForm((current) => ({
+                                                ...current,
+                                                remember: event.target.checked,
+                                            }))
+                                        }
+                                        type="checkbox"
+                                    />
+                                    <span>Keep me signed in</span>
+                                </label>
                                 {error ? (
                                     <Notice tone="danger">{error}</Notice>
+                                ) : null}
+                                {idleNotice ? (
+                                    <Notice>{idleNotice}</Notice>
                                 ) : null}
                                 <button
                                     className="landing-btn landing-btn--primary landing-btn--block"
                                     disabled={submitting}
                                     type="submit"
                                 >
-                                    {submitting ? "Signing in..." : "Login"}
+                                    {submitting ? "Signing in..." : "Sign in"}
                                 </button>
                             </form>
 
