@@ -10,7 +10,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { useToast } from '../../feedback/ToastProvider';
 import { api } from '../../lib/api';
 import { formatCurrency, formatDate } from '../../lib/formatters';
-import type { MembershipCycle, PaginatedResponse, ShareoutItem, ShareoutProfitBreakdown, ShareoutRun, ShareoutSummary } from '../../types';
+import type { MembershipCycle, PaginatedResponse, ShareoutFormula, ShareoutItem, ShareoutProfitBreakdown, ShareoutRun, ShareoutSummary } from '../../types';
 
 function ViewIcon() {
     return (
@@ -84,6 +84,8 @@ export function ShareoutStudioSection() {
     const [runs, setRuns] = useState<PaginatedResponse<ShareoutRun> | null>(null);
     const [selectedRun, setSelectedRun] = useState<ShareoutRun | null>(null);
     const [selectedRunSummary, setSelectedRunSummary] = useState<ShareoutSummary | null>(null);
+    const [selectedRunProfitBreakdown, setSelectedRunProfitBreakdown] = useState<ShareoutProfitBreakdown | null>(null);
+    const [selectedRunFormula, setSelectedRunFormula] = useState<ShareoutFormula | null>(null);
     const [profitBreakdown, setProfitBreakdown] = useState<ShareoutProfitBreakdown | null>(null);
     const [items, setItems] = useState<PaginatedResponse<ShareoutItem> | null>(null);
     const [runPendingDelete, setRunPendingDelete] = useState<ShareoutRun | null>(null);
@@ -143,7 +145,7 @@ export function ShareoutStudioSection() {
 
     const loadRunDetail = async (runId: number, page = itemsPage, status = itemStatusFilter) => {
         const [{ data: detail }, { data: paginatedItems }] = await Promise.all([
-            api.get<{ run: ShareoutRun; summary: ShareoutSummary }>(`/api/exco/shareout-runs/${runId}`),
+            api.get<{ run: ShareoutRun; summary: ShareoutSummary; profit_breakdown: ShareoutProfitBreakdown | null; formula: ShareoutFormula }>(`/api/exco/shareout-runs/${runId}`),
             api.get<PaginatedResponse<ShareoutItem>>(`/api/exco/shareout-runs/${runId}/items`, {
                 params: { page, per_page: 10, status: status || undefined },
             }),
@@ -151,6 +153,8 @@ export function ShareoutStudioSection() {
 
         setSelectedRun(detail.run);
         setSelectedRunSummary(detail.summary);
+        setSelectedRunProfitBreakdown(detail.profit_breakdown);
+        setSelectedRunFormula(detail.formula);
         setItems(paginatedItems);
         setItemsPage(paginatedItems.current_page);
     };
@@ -269,6 +273,8 @@ export function ShareoutStudioSection() {
             if (selectedRun?.id === run.id) {
                 setSelectedRun(null);
                 setSelectedRunSummary(null);
+                setSelectedRunProfitBreakdown(null);
+                setSelectedRunFormula(null);
                 setItems(null);
                 setItemsPage(1);
                 setItemStatusFilter('');
@@ -446,6 +452,15 @@ export function ShareoutStudioSection() {
                         <SummaryCard label="Net payout" value={formatCurrency(selectedRunSummary.net_payout_total)} />
                     </div>
 
+                    {selectedRunProfitBreakdown ? (
+                        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                            <SummaryCard label="Loan service charges" value={formatCurrency(selectedRunProfitBreakdown.loan_service_charge_total)} />
+                            <SummaryCard label="Default penalties" value={formatCurrency(selectedRunProfitBreakdown.default_penalty_total)} />
+                            <SummaryCard label="Membership fees" value={formatCurrency(selectedRunProfitBreakdown.membership_fee_total)} />
+                            <SummaryCard label="Auto-calculated profit" value={formatCurrency(selectedRunProfitBreakdown.total_profit)} />
+                        </div>
+                    ) : null}
+
                     <Panel
                         action={(
                             <div className="flex flex-wrap gap-3">
@@ -460,13 +475,19 @@ export function ShareoutStudioSection() {
                         <div className="mb-4 text-[0.98rem] text-[var(--muted)]">
                             Scheduled window: {formatDate(selectedRun.scheduled_start_on)} to {formatDate(selectedRun.scheduled_end_on)}
                         </div>
+                        {selectedRunFormula ? (
+                            <Notice>
+                                <strong>Allocation formula:</strong> {selectedRunFormula.profit_share} {selectedRunFormula.final_payout}
+                            </Notice>
+                        ) : null}
                         {items ? (
                             <DataTable
                                 columns={[
                                     { key: 'member', header: 'Member', render: (item) => item.member?.full_name ?? 'Unknown' },
                                     { key: 'shares', header: 'Total Shares', render: (item) => String(item.total_shares) },
                                     { key: 'saved', header: 'Total Saved', render: (item) => formatCurrency(item.total_saved) },
-                                    { key: 'gross', header: 'Gross Return', render: (item) => formatCurrency(item.gross_return) },
+                                    { key: 'ratio', header: 'Savings Ratio', render: (item) => `${Number(item.calculation?.savings_ratio_percent ?? 0).toFixed(2)}%` },
+                                    { key: 'profit_share', header: 'Profit Share', render: (item) => formatCurrency(item.calculation?.distributable_profit_share ?? 0) },
                                     { key: 'loan', header: 'Loan Deduction', render: (item) => formatCurrency(item.outstanding_loan_deduction) },
                                     { key: 'admin', header: 'Admin Fee', render: (item) => formatCurrency(item.admin_fee_deduction) },
                                     { key: 'net', header: 'Net Payout', render: (item) => formatCurrency(item.net_payout) },

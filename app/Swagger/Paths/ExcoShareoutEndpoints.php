@@ -193,6 +193,25 @@ class ExcoShareoutEndpoints
                             ],
                             type: 'object'
                         ),
+                        new OA\Property(
+                            property: 'profit_breakdown',
+                            type: 'object',
+                            nullable: true,
+                            properties: [
+                                new OA\Property(property: 'loan_service_charge_total', type: 'number', format: 'float', example: 120000),
+                                new OA\Property(property: 'default_penalty_total', type: 'number', format: 'float', example: 12500),
+                                new OA\Property(property: 'membership_fee_total', type: 'number', format: 'float', example: 24000),
+                                new OA\Property(property: 'total_profit', type: 'number', format: 'float', example: 156500),
+                            ]
+                        ),
+                        new OA\Property(
+                            property: 'formula',
+                            type: 'object',
+                            properties: [
+                                new OA\Property(property: 'profit_share', type: 'string', example: 'Each member receives a share of distributable profit based on their savings ratio within the total cycle savings pool.'),
+                                new OA\Property(property: 'final_payout', type: 'string', example: 'Final share-out = member savings + member share of distributable profit - outstanding loan deduction.'),
+                            ]
+                        ),
                     ]
                 )
             ),

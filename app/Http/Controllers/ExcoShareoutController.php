@@ -131,6 +131,8 @@ class ExcoShareoutController extends Controller
         return response()->json([
             'run' => $run,
             'summary' => $this->summaryFromRun($run),
+            'profit_breakdown' => $run->cycle ? $this->profitCalculator->build($run->cycle) : null,
+            'formula' => $this->formulaSummary(),
         ]);
     }
 
@@ -142,6 +144,31 @@ class ExcoShareoutController extends Controller
             ->orderByDesc('net_payout')
             ->orderBy('id')
             ->paginate($this->perPage($request));
+
+        $totalSavingsPool = round((float) $shareoutRun->items()->sum('total_saved'), 2);
+        $totalProfit = round((float) ($shareoutRun->total_profit ?? 0), 2);
+        $adminFeeAmount = round((float) ($shareoutRun->admin_fee_amount ?? 0), 2);
+        $distributableProfit = round((float) ($shareoutRun->distributable_profit ?? max($totalProfit - $adminFeeAmount, 0)), 2);
+
+        $items->setCollection(
+            $items->getCollection()->map(function (ShareoutItem $item) use ($totalSavingsPool, $totalProfit, $adminFeeAmount, $distributableProfit) {
+                $memberSavings = round((float) $item->total_saved, 2);
+                $savingsRatio = $totalSavingsPool > 0 ? $memberSavings / $totalSavingsPool : 0;
+
+                return [
+                    ...$item->toArray(),
+                    'calculation' => [
+                        'principal_amount' => $this->decimalString($memberSavings),
+                        'total_savings_pool' => $this->decimalString($totalSavingsPool),
+                        'savings_ratio' => round($savingsRatio, 8),
+                        'savings_ratio_percent' => $this->decimalString(round($savingsRatio * 100, 4)),
+                        'gross_profit_share' => $this->decimalString(round($totalProfit * $savingsRatio, 2)),
+                        'distributable_profit_share' => $this->decimalString(round($distributableProfit * $savingsRatio, 2)),
+                        'admin_fee_amount' => $this->decimalString($adminFeeAmount),
+                    ],
+                ];
+            })
+        );
 
         return response()->json($items);
     }
@@ -288,5 +315,18 @@ class ExcoShareoutController extends Controller
             'admin_fee_deduction_total' => (string) ($run->items_sum_admin_fee_deduction ?? 0),
             'net_payout_total' => (string) ($run->items_sum_net_payout ?? 0),
         ];
+    }
+
+    private function formulaSummary(): array
+    {
+        return [
+            'profit_share' => 'Each member receives a share of distributable profit based on their savings ratio within the total cycle savings pool.',
+            'final_payout' => 'Final share-out = member savings + member share of distributable profit - outstanding loan deduction.',
+        ];
+    }
+
+    private function decimalString(float $value): string
+    {
+        return number_format($value, 2, '.', '');
     }
 }

@@ -13,6 +13,21 @@ import { formatCurrency, formatDate, formatMonth } from '../lib/formatters';
 import { api } from '../lib/api';
 import type { Loan, LoanGuarantorApproval, LoanOverview, LoanRepaymentSubmission, MemberShareoutOverview, MembershipCycle, MembershipFee, MembershipFeeSubmission, PaginatedResponse, SavingsOverview, SharePaymentSubmission, SharePurchase, ShareoutItem } from '../types';
 
+function ViewIcon() {
+    return (
+        <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+            <path
+                d="M2.25 12s3.75-6 9.75-6 9.75 6 9.75 6-3.75 6-9.75 6-9.75-6-9.75-6Z"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.8"
+            />
+            <circle cx="12" cy="12" fill="currentColor" r="2.4" />
+        </svg>
+    );
+}
+
 export function MemberDashboardPage() {
     const { user } = useAuth();
 
@@ -71,6 +86,7 @@ const savingsWorkspaceTabs: Array<{ id: SavingsWorkspaceTab; label: string; desc
 function MemberShareoutsSection() {
     const [overview, setOverview] = useState<MemberShareoutOverview | null>(null);
     const [items, setItems] = useState<PaginatedResponse<ShareoutItem> | null>(null);
+    const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
     const [cycles, setCycles] = useState<MembershipCycle[]>([]);
     const [page, setPage] = useState(1);
     const [cycleFilter, setCycleFilter] = useState('');
@@ -88,6 +104,13 @@ function MemberShareoutsSection() {
         });
         setItems(data);
         setPage(data.current_page);
+        setSelectedItemId((current) => {
+            if (current && data.data.some((item) => item.id === current)) {
+                return current;
+            }
+
+            return data.data[0]?.id ?? null;
+        });
     };
 
     useEffect(() => {
@@ -108,6 +131,8 @@ function MemberShareoutsSection() {
         return () => window.clearTimeout(timeout);
     }, [cycleFilter, statusFilter]);
 
+    const selectedItem = items?.data.find((item) => item.id === selectedItemId) ?? null;
+
     return (
         <div>
             <PageHeader
@@ -127,6 +152,14 @@ function MemberShareoutsSection() {
                 </div>
             ) : null}
 
+            {overview?.formula ? (
+                <div className="mt-6">
+                    <Notice>
+                        <strong>Share-out formula:</strong> {overview.formula.profit_share} {overview.formula.final_payout}
+                    </Notice>
+                </div>
+            ) : null}
+
             <div className="mt-6">
                 <Panel eyebrow="Share-out records" title="Your share-out breakdowns">
                     {items ? (
@@ -134,12 +167,28 @@ function MemberShareoutsSection() {
                             columns={[
                                 { key: 'cycle', header: 'Cycle', render: (item) => item.run?.cycle?.code ?? 'Not set' },
                                 { key: 'total_saved', header: 'Total Saved', render: (item) => formatCurrency(item.total_saved) },
-                                { key: 'gross_return', header: 'Gross Return', render: (item) => formatCurrency(item.gross_return) },
+                                { key: 'savings_ratio', header: 'Savings Ratio', render: (item) => `${Number(item.calculation?.savings_ratio_percent ?? 0).toFixed(2)}%` },
+                                { key: 'profit_share', header: 'Share of Profit', render: (item) => formatCurrency(item.calculation?.distributable_profit_share ?? 0) },
                                 { key: 'loan_deduction', header: 'Loan Deduction', render: (item) => formatCurrency(item.outstanding_loan_deduction) },
-                                { key: 'admin_fee', header: 'Admin Fee', render: (item) => formatCurrency(item.admin_fee_deduction) },
                                 { key: 'net_payout', header: 'Net Payout', render: (item) => formatCurrency(item.net_payout) },
                                 { key: 'status', header: 'Status', render: (item) => item.status },
                                 { key: 'paid_at', header: 'Paid At', render: (item) => formatDate(item.paid_at) },
+                                {
+                                    key: 'action',
+                                    header: 'Action',
+                                    exportable: false,
+                                    render: (item) => (
+                                        <button
+                                            aria-label={`View share-out breakdown for ${item.run?.cycle?.code ?? 'cycle'}`}
+                                            className="app-icon-button"
+                                            onClick={() => setSelectedItemId(item.id)}
+                                            title="View breakdown"
+                                            type="button"
+                                        >
+                                            <ViewIcon />
+                                        </button>
+                                    ),
+                                },
                             ]}
                             currentPage={items.current_page}
                             emptyMessage="No share-out records have been posted for your account yet."
@@ -167,6 +216,39 @@ function MemberShareoutsSection() {
                     ) : <Notice>Loading share-out records...</Notice>}
                 </Panel>
             </div>
+
+            {selectedItem ? (
+                <div className="mt-6 grid gap-6">
+                    <Panel
+                        eyebrow={selectedItem.run?.cycle?.code ?? 'Selected share-out'}
+                        title="How this share-out was calculated"
+                    >
+                        <div className="shareout-explainer">
+                            <p className="shareout-explainer__lead">
+                                This breakdown shows the full cycle profit pool, the 20% admin retention, your savings ratio within the total savings pool, and the final payout after any outstanding loan deduction.
+                            </p>
+                            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                                <SummaryCard label="Loan service charges" value={formatCurrency(selectedItem.profit_breakdown?.loan_service_charge_total ?? 0)} />
+                                <SummaryCard label="Default penalties" value={formatCurrency(selectedItem.profit_breakdown?.default_penalty_total ?? 0)} />
+                                <SummaryCard label="Membership fees" value={formatCurrency(selectedItem.profit_breakdown?.membership_fee_total ?? 0)} />
+                                <SummaryCard label="Total cycle profit" value={formatCurrency(selectedItem.run_context?.total_profit ?? 0)} />
+                                <SummaryCard label="Admin retained" value={formatCurrency(selectedItem.run_context?.admin_fee_amount ?? 0)} />
+                                <SummaryCard label="Distributable profit" value={formatCurrency(selectedItem.run_context?.distributable_profit ?? 0)} />
+                                <SummaryCard label="Total savings by all members" value={formatCurrency(selectedItem.run_context?.total_savings_pool ?? 0)} />
+                                <SummaryCard label="Your total savings" value={formatCurrency(selectedItem.calculation?.principal_amount ?? selectedItem.total_saved)} />
+                                <SummaryCard label="Your savings ratio" value={`${Number(selectedItem.calculation?.savings_ratio_percent ?? 0).toFixed(2)}%`} />
+                                <SummaryCard label="Your share of profit" value={formatCurrency(selectedItem.calculation?.distributable_profit_share ?? 0)} />
+                                <SummaryCard label="Outstanding loan deduction" value={formatCurrency(selectedItem.outstanding_loan_deduction)} />
+                                <SummaryCard label="Final share-out payout" value={formatCurrency(selectedItem.net_payout)} />
+                            </div>
+                            <div className="shareout-formula-box">
+                                <p><strong>Profit-share formula:</strong> (Your total savings / Total savings by all members) x Distributable profit</p>
+                                <p><strong>Final payout formula:</strong> Your total savings + Your share of profit - Outstanding loan deduction</p>
+                            </div>
+                        </div>
+                    </Panel>
+                </div>
+            ) : null}
         </div>
     );
 }

@@ -2639,6 +2639,45 @@
                                                 }
                                             },
                                             "type": "object"
+                                        },
+                                        "profit_breakdown": {
+                                            "properties": {
+                                                "loan_service_charge_total": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 120000
+                                                },
+                                                "default_penalty_total": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 12500
+                                                },
+                                                "membership_fee_total": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 24000
+                                                },
+                                                "total_profit": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 156500
+                                                }
+                                            },
+                                            "type": "object",
+                                            "nullable": true
+                                        },
+                                        "formula": {
+                                            "properties": {
+                                                "profit_share": {
+                                                    "type": "string",
+                                                    "example": "Each member receives a share of distributable profit based on their savings ratio within the total cycle savings pool."
+                                                },
+                                                "final_payout": {
+                                                    "type": "string",
+                                                    "example": "Final share-out = member savings + member share of distributable profit - outstanding loan deduction."
+                                                }
+                                            },
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"
@@ -4430,6 +4469,19 @@
                                                 }
                                             },
                                             "type": "object"
+                                        },
+                                        "formula": {
+                                            "properties": {
+                                                "profit_share": {
+                                                    "type": "string",
+                                                    "example": "Your share of profit = (your total savings / total savings by all members) × distributable profit."
+                                                },
+                                                "final_payout": {
+                                                    "type": "string",
+                                                    "example": "Final share-out = your total savings + your share of distributable profit - outstanding loan deduction."
+                                                }
+                                            },
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"
@@ -6205,6 +6257,100 @@
                         "type": "string",
                         "format": "date-time",
                         "example": "2026-12-18T15:00:00Z",
+                        "nullable": true
+                    },
+                    "run_context": {
+                        "properties": {
+                            "total_savings_pool": {
+                                "type": "number",
+                                "format": "float",
+                                "example": 9500000
+                            },
+                            "total_profit": {
+                                "type": "number",
+                                "format": "float",
+                                "example": 1170000
+                            },
+                            "admin_fee_amount": {
+                                "type": "number",
+                                "format": "float",
+                                "example": 234000
+                            },
+                            "distributable_profit": {
+                                "type": "number",
+                                "format": "float",
+                                "example": 936000
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "profit_breakdown": {
+                        "properties": {
+                            "loan_service_charge_total": {
+                                "type": "number",
+                                "format": "float",
+                                "example": 900000
+                            },
+                            "default_penalty_total": {
+                                "type": "number",
+                                "format": "float",
+                                "example": 60000
+                            },
+                            "membership_fee_total": {
+                                "type": "number",
+                                "format": "float",
+                                "example": 210000
+                            },
+                            "total_profit": {
+                                "type": "number",
+                                "format": "float",
+                                "example": 1170000
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "calculation": {
+                        "properties": {
+                            "principal_amount": {
+                                "type": "number",
+                                "format": "float",
+                                "example": 1000000
+                            },
+                            "total_savings_pool": {
+                                "type": "number",
+                                "format": "float",
+                                "example": 9500000
+                            },
+                            "savings_ratio": {
+                                "type": "number",
+                                "format": "float",
+                                "example": 0.10526316
+                            },
+                            "savings_ratio_percent": {
+                                "type": "number",
+                                "format": "float",
+                                "example": 10.5263
+                            },
+                            "gross_profit_share": {
+                                "type": "number",
+                                "format": "float",
+                                "example": 123157.89
+                            },
+                            "distributable_profit_share": {
+                                "type": "number",
+                                "format": "float",
+                                "example": 98526.32
+                            },
+                            "admin_fee_amount": {
+                                "type": "number",
+                                "format": "float",
+                                "example": 234000,
+                                "nullable": true
+                            }
+                        },
+                        "type": "object",
                         "nullable": true
                     },
                     "member": {

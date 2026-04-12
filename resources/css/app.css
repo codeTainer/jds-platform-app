@@ -1881,6 +1881,32 @@ a:active {
     max-width: 52rem;
 }
 
+.shareout-explainer {
+    display: grid;
+    gap: 1.25rem;
+}
+
+.shareout-explainer__lead {
+    color: #5f7385;
+    font-size: 1rem;
+    line-height: 1.8;
+    margin: 0;
+}
+
+.shareout-formula-box {
+    background: linear-gradient(180deg, #f7fbff, #eef6fd);
+    border: 1px solid rgba(12, 59, 102, 0.1);
+    border-radius: 18px;
+    color: #23445d;
+    display: grid;
+    gap: 0.7rem;
+    padding: 1rem 1.15rem;
+}
+
+.shareout-formula-box p {
+    margin: 0;
+}
+
 .auth-gate-shell {
     min-height: 100vh;
     display: flex;

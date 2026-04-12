@@ -281,6 +281,28 @@ export interface ShareoutRun {
     items_sum_net_payout?: number | string | null;
 }
 
+export interface ShareoutFormula {
+    profit_share: string;
+    final_payout: string;
+}
+
+export interface ShareoutRunContext {
+    total_savings_pool: number | string;
+    total_profit: number | string;
+    admin_fee_amount: number | string;
+    distributable_profit: number | string;
+}
+
+export interface ShareoutCalculation {
+    principal_amount: number | string;
+    total_savings_pool: number | string;
+    savings_ratio: number;
+    savings_ratio_percent: number | string;
+    gross_profit_share: number | string;
+    distributable_profit_share: number | string;
+    admin_fee_amount?: number | string;
+}
+
 export interface ShareoutItem {
     id: number;
     shareout_run_id: number;
@@ -295,6 +317,9 @@ export interface ShareoutItem {
     paid_at?: string | null;
     member?: Member | null;
     run?: ShareoutRun | null;
+    run_context?: ShareoutRunContext | null;
+    calculation?: ShareoutCalculation | null;
+    profit_breakdown?: ShareoutProfitBreakdown | null;
 }
 
 export interface ShareoutSummary {
@@ -325,6 +350,7 @@ export interface MemberShareoutOverview {
         total_net_payout: number | string;
         paid_items_count: number;
     };
+    formula?: ShareoutFormula;
 }
 
 export interface PaginatedResponse<T> {

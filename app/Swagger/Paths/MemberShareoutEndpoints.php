@@ -29,6 +29,14 @@ class MemberShareoutEndpoints
                             ],
                             type: 'object'
                         ),
+                        new OA\Property(
+                            property: 'formula',
+                            type: 'object',
+                            properties: [
+                                new OA\Property(property: 'profit_share', type: 'string', example: 'Your share of profit = (your total savings / total savings by all members) × distributable profit.'),
+                                new OA\Property(property: 'final_payout', type: 'string', example: 'Final share-out = your total savings + your share of distributable profit - outstanding loan deduction.'),
+                            ]
+                        ),
                     ]
                 )
             ),
