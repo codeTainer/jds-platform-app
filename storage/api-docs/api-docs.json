@@ -541,6 +541,186 @@
                 ]
             }
         },
+        "/api/exco/exit-requests": {
+            "get": {
+                "tags": [
+                    "EXCO Exit Requests"
+                ],
+                "summary": "List member exit requests for EXCO",
+                "operationId": "9f35ca9400bb10d33cf937ab04b5c48c",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "member_search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated exit requests",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "current_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/MemberExitRequest"
+                                            }
+                                        },
+                                        "from": {
+                                            "type": "integer",
+                                            "example": 1,
+                                            "nullable": true
+                                        },
+                                        "last_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "per_page": {
+                                            "type": "integer",
+                                            "example": 10
+                                        },
+                                        "to": {
+                                            "type": "integer",
+                                            "example": 1,
+                                            "nullable": true
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Unauthorized for exit desk"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/exco/exit-requests/{memberExitRequest}": {
+            "patch": {
+                "tags": [
+                    "EXCO Exit Requests"
+                ],
+                "summary": "Update a member exit request status",
+                "operationId": "d2e4211cc690d61f8ab25d8a30404b43",
+                "parameters": [
+                    {
+                        "name": "memberExitRequest",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "type": "string",
+                                        "example": "approved"
+                                    },
+                                    "notes": {
+                                        "type": "string",
+                                        "example": "Approved pending final payout processing.",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Exit request updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Exit request updated successfully."
+                                        },
+                                        "exit_request": {
+                                            "$ref": "#/components/schemas/MemberExitRequest"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Unauthorized for exit desk"
+                    },
+                    "422": {
+                        "description": "Validation failed"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/exco/loans": {
             "get": {
                 "tags": [
@@ -4167,6 +4347,260 @@
                 ]
             }
         },
+        "/api/member/exit-requests/overview": {
+            "get": {
+                "tags": [
+                    "Member Exit Requests"
+                ],
+                "summary": "Get the authenticated member exit overview",
+                "operationId": "2c5706b919a00db6112baa0988aa906a",
+                "responses": {
+                    "200": {
+                        "description": "Exit overview",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "member": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "member_number": {
+                                                    "type": "string",
+                                                    "example": "JDS-MEM-0001",
+                                                    "nullable": true
+                                                },
+                                                "full_name": {
+                                                    "type": "string",
+                                                    "example": "Ebube Chidi"
+                                                },
+                                                "membership_status": {
+                                                    "type": "string",
+                                                    "example": "active"
+                                                },
+                                                "left_on": {
+                                                    "type": "string",
+                                                    "format": "date",
+                                                    "example": null,
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "summary": {
+                                            "properties": {
+                                                "total_saved_value": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 1200000
+                                                },
+                                                "outstanding_loan_balance": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 250000
+                                                },
+                                                "estimated_refund_amount": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 950000
+                                                },
+                                                "latest_exit_request_status": {
+                                                    "type": "string",
+                                                    "example": "pending",
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Authenticated user is not linked to a member profile"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/member/exit-requests": {
+            "get": {
+                "tags": [
+                    "Member Exit Requests"
+                ],
+                "summary": "List exit requests raised by the authenticated member",
+                "operationId": "ad634bda9105cb552377a39475f74262",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated exit requests",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "current_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/MemberExitRequest"
+                                            }
+                                        },
+                                        "from": {
+                                            "type": "integer",
+                                            "example": 1,
+                                            "nullable": true
+                                        },
+                                        "last_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "per_page": {
+                                            "type": "integer",
+                                            "example": 10
+                                        },
+                                        "to": {
+                                            "type": "integer",
+                                            "example": 1,
+                                            "nullable": true
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Authenticated user is not linked to a member profile"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Member Exit Requests"
+                ],
+                "summary": "Submit a new member exit request",
+                "operationId": "b85f5f43d134d16ca738df7b3b889bc0",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "notice_given_on",
+                                    "requested_exit_on"
+                                ],
+                                "properties": {
+                                    "notice_given_on": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-04-01"
+                                    },
+                                    "requested_exit_on": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-05-01"
+                                    },
+                                    "notes": {
+                                        "type": "string",
+                                        "example": "I want to exit after my current commitments are concluded.",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Exit request submitted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Exit request submitted successfully and is awaiting EXCO review."
+                                        },
+                                        "exit_request": {
+                                            "$ref": "#/components/schemas/MemberExitRequest"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Authenticated user is not linked to a member profile"
+                    },
+                    "422": {
+                        "description": "Validation failed"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/member/loans/overview": {
             "get": {
                 "tags": [
@@ -6895,6 +7329,108 @@
                 },
                 "type": "object"
             },
+            "MemberExitRequest": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 3
+                    },
+                    "member_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "notice_given_on": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-04-01"
+                    },
+                    "requested_exit_on": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-05-01"
+                    },
+                    "status": {
+                        "type": "string",
+                        "example": "pending"
+                    },
+                    "outstanding_loan_deduction": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 250000
+                    },
+                    "savings_refund_amount": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 950000,
+                        "nullable": true
+                    },
+                    "processed_by": {
+                        "type": "integer",
+                        "example": 2,
+                        "nullable": true
+                    },
+                    "processed_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-04-13T14:00:00Z",
+                        "nullable": true
+                    },
+                    "notes": {
+                        "type": "string",
+                        "example": "Member confirmed final exit after loan reconciliation.",
+                        "nullable": true
+                    },
+                    "current_total_saved_value": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 1200000,
+                        "nullable": true
+                    },
+                    "current_outstanding_loan_balance": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 250000,
+                        "nullable": true
+                    },
+                    "current_estimated_refund_amount": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 950000,
+                        "nullable": true
+                    },
+                    "member": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/Member"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "processor": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "example": 2
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "Secretary JDS"
+                            },
+                            "email": {
+                                "type": "string",
+                                "example": "secretary@jds.local"
+                            },
+                            "role": {
+                                "type": "string",
+                                "example": "secretary"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
             "MembershipCycle": {
                 "properties": {
                     "id": {
@@ -7866,6 +8402,10 @@
             "description": "EXCO Concerns"
         },
         {
+            "name": "EXCO Exit Requests",
+            "description": "EXCO Exit Requests"
+        },
+        {
             "name": "EXCO Loans",
             "description": "EXCO Loans"
         },
@@ -7900,6 +8440,10 @@
         {
             "name": "Member Concerns",
             "description": "Member Concerns"
+        },
+        {
+            "name": "Member Exit Requests",
+            "description": "Member Exit Requests"
         },
         {
             "name": "Member Loans",

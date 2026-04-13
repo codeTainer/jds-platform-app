@@ -7,6 +7,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class MemberExitRequest extends Model
 {
+    public const STATUS_PENDING = 'pending';
+    public const STATUS_IN_REVIEW = 'in_review';
+    public const STATUS_APPROVED = 'approved';
+    public const STATUS_REJECTED = 'rejected';
+    public const STATUS_COMPLETED = 'completed';
+
     protected $fillable = [
         'member_id',
         'notice_given_on',

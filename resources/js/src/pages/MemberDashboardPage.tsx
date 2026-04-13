@@ -11,6 +11,7 @@ import { useToast } from '../feedback/ToastProvider';
 import { downloadTableExport, type TableExportFormat } from '../lib/download';
 import { formatCurrency, formatDate, formatMonth } from '../lib/formatters';
 import { api } from '../lib/api';
+import { MemberExitSection } from '../sections/member/ExitSection';
 import { SupportSection } from '../sections/member/SupportSection';
 import type { Loan, LoanGuarantorApproval, LoanOverview, LoanRepaymentSubmission, MemberShareoutOverview, MembershipCycle, MembershipFee, MembershipFeeSubmission, PaginatedResponse, SavingsOverview, SharePaymentSubmission, SharePurchase, ShareoutItem } from '../types';
 
@@ -38,6 +39,7 @@ export function MemberDashboardPage() {
             <Route element={<MemberSavingsSection />} path="savings" />
             <Route element={<MemberShareoutsSection />} path="shareouts" />
             <Route element={<MemberLoansSection />} path="loans" />
+            <Route element={<MemberExitSection />} path="exits" />
             <Route element={<SupportSection />} path="support" />
             <Route element={<Navigate replace to="/dashboard/member" />} path="*" />
         </Routes>

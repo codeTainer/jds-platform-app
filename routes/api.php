@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ExcoAuditLogController;
 use App\Http\Controllers\ExcoConcernController;
+use App\Http\Controllers\ExcoExitRequestController;
 use App\Http\Controllers\ExcoReportController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ExcoMemberApplicationController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\ExcoMemberController;
 use App\Http\Controllers\ExcoMembershipCycleController;
 use App\Http\Controllers\ExcoLoanController;
 use App\Http\Controllers\MemberConcernController;
+use App\Http\Controllers\MemberExitRequestController;
 use App\Http\Controllers\MemberLoanController;
 use App\Http\Controllers\ExcoShareoutController;
 use App\Http\Controllers\ExcoSavingsController;
@@ -50,6 +52,9 @@ Route::middleware('auth.token')->group(function () {
         Route::get('/concerns/options', [MemberConcernController::class, 'options']);
         Route::get('/concerns', [MemberConcernController::class, 'index']);
         Route::post('/concerns', [MemberConcernController::class, 'store']);
+        Route::get('/exit-requests/overview', [MemberExitRequestController::class, 'overview']);
+        Route::get('/exit-requests', [MemberExitRequestController::class, 'index']);
+        Route::post('/exit-requests', [MemberExitRequestController::class, 'store']);
         Route::get('/shareouts/overview', [MemberShareoutController::class, 'overview']);
         Route::get('/shareouts', [MemberShareoutController::class, 'index']);
         Route::get('/loans/overview', [MemberLoanController::class, 'overview']);
@@ -105,6 +110,8 @@ Route::prefix('exco')->middleware('auth.token')->group(function () {
 
     Route::get('/concerns', [ExcoConcernController::class, 'index']);
     Route::patch('/concerns/{concern}', [ExcoConcernController::class, 'update']);
+    Route::get('/exit-requests', [ExcoExitRequestController::class, 'index']);
+    Route::patch('/exit-requests/{memberExitRequest}', [ExcoExitRequestController::class, 'update']);
 
     Route::get('/audit-logs', [ExcoAuditLogController::class, 'index']);
 

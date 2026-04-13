@@ -462,3 +462,37 @@ export interface AuditLogEntry {
         member_number?: string | null;
     } | null;
 }
+
+export interface MemberExitRequest {
+    id: number;
+    member_id: number;
+    notice_given_on: string;
+    requested_exit_on: string;
+    status: 'pending' | 'in_review' | 'approved' | 'rejected' | 'completed';
+    outstanding_loan_deduction: number | string;
+    savings_refund_amount?: number | string | null;
+    processed_by?: number | null;
+    processed_at?: string | null;
+    notes?: string | null;
+    member?: Member | null;
+    processor?: Pick<User, 'id' | 'name' | 'email' | 'role'> | null;
+    current_total_saved_value?: number | string | null;
+    current_outstanding_loan_balance?: number | string | null;
+    current_estimated_refund_amount?: number | string | null;
+}
+
+export interface MemberExitOverview {
+    member: {
+        id: number;
+        member_number: string | null;
+        full_name: string;
+        membership_status: string;
+        left_on?: string | null;
+    };
+    summary: {
+        total_saved_value: number | string;
+        outstanding_loan_balance: number | string;
+        estimated_refund_amount: number | string;
+        latest_exit_request_status?: string | null;
+    };
+}
