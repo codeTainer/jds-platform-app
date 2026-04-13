@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Concern;
+use App\Support\AuditLogger;
 use App\Support\ConcernCatalog;
 use App\Support\ProcessNotifier;
 use Illuminate\Http\Request;
@@ -11,7 +12,8 @@ class ExcoConcernController extends Controller
 {
     public function __construct(
         private readonly ConcernCatalog $catalog,
-        private readonly ProcessNotifier $notifier
+        private readonly ProcessNotifier $notifier,
+        private readonly AuditLogger $auditLogger
     )
     {
     }
@@ -117,6 +119,18 @@ class ExcoConcernController extends Controller
             meta: [
                 'concern_id' => $concern->id,
                 'status' => $concern->status,
+            ],
+        );
+
+        $this->auditLogger->log(
+            $request->user(),
+            'concerns.updated',
+            $concern,
+            'Updated concern #' . $concern->id . ' to ' . $data['status'] . '.',
+            [
+                'concern_id' => $concern->id,
+                'member_number' => $concern->member?->member_number,
+                'status' => $data['status'],
             ],
         );
 

@@ -3,12 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Models\MembershipCycle;
+use App\Support\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class ExcoMembershipCycleController extends Controller
 {
+    public function __construct(
+        private readonly AuditLogger $auditLogger
+    ) {
+    }
+
     public function index()
     {
         $cycles = MembershipCycle::query()
@@ -31,6 +37,18 @@ class ExcoMembershipCycleController extends Controller
 
             return MembershipCycle::create($data);
         });
+
+        $this->auditLogger->log(
+            $request->user(),
+            'cycles.created',
+            $cycle,
+            'Created membership cycle ' . $cycle->code . '.',
+            [
+                'cycle_id' => $cycle->id,
+                'cycle_code' => $cycle->code,
+                'is_active' => $cycle->is_active,
+            ],
+        );
 
         return response()->json([
             'message' => 'Membership cycle created successfully.',
@@ -61,6 +79,18 @@ class ExcoMembershipCycleController extends Controller
             return $membershipCycle->fresh();
         });
 
+        $this->auditLogger->log(
+            $request->user(),
+            'cycles.updated',
+            $cycle,
+            'Updated membership cycle ' . $cycle->code . '.',
+            [
+                'cycle_id' => $cycle->id,
+                'cycle_code' => $cycle->code,
+                'is_active' => $cycle->is_active,
+            ],
+        );
+
         return response()->json([
             'message' => 'Membership cycle updated successfully.',
             'cycle' => $cycle,
@@ -76,6 +106,17 @@ class ExcoMembershipCycleController extends Controller
 
             return $membershipCycle->fresh();
         });
+
+        $this->auditLogger->log(
+            request()->user(),
+            'cycles.activated',
+            $cycle,
+            'Activated membership cycle ' . $cycle->code . '.',
+            [
+                'cycle_id' => $cycle->id,
+                'cycle_code' => $cycle->code,
+            ],
+        );
 
         return response()->json([
             'message' => 'Membership cycle activated successfully.',
@@ -109,7 +150,20 @@ class ExcoMembershipCycleController extends Controller
             ], 422);
         }
 
+        $deletedCycleId = $membershipCycle->id;
+        $deletedCycleCode = $membershipCycle->code;
         $membershipCycle->delete();
+
+        $this->auditLogger->log(
+            request()->user(),
+            'cycles.deleted',
+            MembershipCycle::class,
+            'Deleted membership cycle ' . $deletedCycleCode . '.',
+            [
+                'cycle_id' => $deletedCycleId,
+                'cycle_code' => $deletedCycleCode,
+            ],
+        );
 
         return response()->json([
             'message' => 'Membership cycle deleted successfully.',

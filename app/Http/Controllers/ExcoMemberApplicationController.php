@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\MemberApplication;
 use App\Models\User;
+use App\Support\AuditLogger;
 use App\Support\MemberAccountProvisioner;
 use App\Support\ProcessNotifier;
 use Illuminate\Http\Request;
@@ -14,7 +15,8 @@ class ExcoMemberApplicationController extends Controller
 {
     public function __construct(
         private readonly MemberAccountProvisioner $memberAccountProvisioner,
-        private readonly ProcessNotifier $processNotifier
+        private readonly ProcessNotifier $processNotifier,
+        private readonly AuditLogger $auditLogger
     ) {
     }
 
@@ -97,6 +99,24 @@ class ExcoMemberApplicationController extends Controller
                 meta: ['application_id' => $memberApplication->id],
             );
         }
+
+        $this->auditLogger->log(
+            $request->user(),
+            $data['status'] === MemberApplication::STATUS_APPROVED ? 'applications.approved' : 'applications.rejected',
+            $memberApplication,
+            sprintf(
+                '%s member application #%d for %s.',
+                $data['status'] === MemberApplication::STATUS_APPROVED ? 'Approved' : 'Rejected',
+                $memberApplication->id,
+                $memberApplication->full_name
+            ),
+            [
+                'application_id' => $memberApplication->id,
+                'applicant_name' => $memberApplication->full_name,
+                'status' => $data['status'],
+                'approved_member_number' => $application->approvedMember?->member_number,
+            ],
+        );
 
         return response()->json([
             'message' => 'Application reviewed successfully.',

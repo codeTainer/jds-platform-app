@@ -2005,6 +2005,76 @@ a:active {
     flex-wrap: wrap;
 }
 
+.audit-detail {
+    display: grid;
+    gap: 1.1rem;
+}
+
+.audit-table-button {
+    background: rgba(10, 75, 134, 0.08);
+    border: 1px solid rgba(10, 75, 134, 0.14);
+    border-radius: 999px;
+    color: #0a4b86;
+    font-size: 0.86rem;
+    font-weight: 700;
+    padding: 0.45rem 0.9rem;
+}
+
+.audit-table-button:hover {
+    background: #0a4b86;
+    border-color: #0a4b86;
+    color: #fff;
+}
+
+.audit-detail__group {
+    display: grid;
+    gap: 0.4rem;
+    padding: 1rem 1.05rem;
+    border: 1px solid rgba(10, 75, 134, 0.12);
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(247, 251, 255, 0.98), rgba(236, 245, 255, 0.92));
+}
+
+.audit-detail__group p {
+    margin: 0;
+    color: var(--muted);
+}
+
+.audit-detail__label {
+    font-size: 0.74rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #0a4b86;
+    font-weight: 800;
+}
+
+.audit-detail__metadata {
+    display: grid;
+    gap: 0.65rem;
+}
+
+.audit-detail__metadata-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.8rem 0.9rem;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(10, 75, 134, 0.08);
+}
+
+.audit-detail__metadata-row span {
+    color: var(--muted);
+    text-transform: capitalize;
+}
+
+.audit-detail__metadata-row strong {
+    text-align: right;
+    color: var(--ink);
+    max-width: 62%;
+    word-break: break-word;
+}
+
 @media (max-width: 1100px) {
     .landing-hero__carousel,
     .landing-about-grid,

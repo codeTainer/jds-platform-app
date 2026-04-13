@@ -442,3 +442,23 @@ export interface ExcoReportSummaryResponse {
     cycle?: MembershipCycle | null;
     summary: ExcoReportSummary;
 }
+
+export interface AuditLogEntry {
+    id: number;
+    action: string;
+    module: string;
+    module_label: string;
+    action_label: string;
+    description?: string | null;
+    auditable_type?: string | null;
+    auditable_id?: number | string | null;
+    occurred_at?: string | null;
+    metadata?: Record<string, unknown>;
+    actor?: {
+        id: number;
+        name: string;
+        email: string;
+        role: UserRole;
+        member_number?: string | null;
+    } | null;
+}

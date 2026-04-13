@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ExcoAuditLogController;
 use App\Http\Controllers\ExcoConcernController;
 use App\Http\Controllers\ExcoReportController;
 use App\Http\Controllers\NotificationController;
@@ -18,7 +19,7 @@ use App\Http\Controllers\PublicSummaryController;
 use App\Http\Controllers\PublicMemberApplicationController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/health', fn () => [
+Route::get('/health', fn() => [
     'status' => 'ok',
     'app' => config('app.name'),
 ]);
@@ -101,8 +102,12 @@ Route::prefix('exco')->middleware('auth.token')->group(function () {
     Route::patch('/shareout-runs/{shareoutRun}/reject', [ExcoShareoutController::class, 'reject']);
     Route::patch('/shareout-runs/{shareoutRun}/execute', [ExcoShareoutController::class, 'execute']);
     Route::patch('/shareout-items/{shareoutItem}/mark-paid', [ExcoShareoutController::class, 'markItemPaid']);
+
     Route::get('/concerns', [ExcoConcernController::class, 'index']);
     Route::patch('/concerns/{concern}', [ExcoConcernController::class, 'update']);
+
+    Route::get('/audit-logs', [ExcoAuditLogController::class, 'index']);
+
     Route::get('/reports/summary', [ExcoReportController::class, 'summary']);
     Route::get('/reports/savings', [ExcoReportController::class, 'savings']);
     Route::get('/reports/loans', [ExcoReportController::class, 'loans']);

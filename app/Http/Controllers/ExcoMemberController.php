@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Member;
 use App\Models\User;
+use App\Support\AuditLogger;
 use App\Support\MemberAccountProvisioner;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -14,7 +15,8 @@ use Illuminate\Validation\ValidationException;
 class ExcoMemberController extends Controller
 {
     public function __construct(
-        private readonly MemberAccountProvisioner $memberAccountProvisioner
+        private readonly MemberAccountProvisioner $memberAccountProvisioner,
+        private readonly AuditLogger $auditLogger
     ) {
     }
 
@@ -72,6 +74,19 @@ class ExcoMemberController extends Controller
 
         $created = $this->memberAccountProvisioner->create($data);
 
+        $this->auditLogger->log(
+            $request->user(),
+            'members.created',
+            $created['member'],
+            'Created member account for ' . $created['member']->full_name . '.',
+            [
+                'member_id' => $created['member']->id,
+                'member_number' => $created['member']->member_number,
+                'role' => $created['user']->role,
+                'email' => $created['member']->email,
+            ],
+        );
+
         return response()->json([
             'message' => 'Member account created successfully. Temporary login details have been sent to the member email.',
             'member' => $created['member'],
@@ -116,6 +131,22 @@ class ExcoMemberController extends Controller
                 ];
             }
         }
+
+        $this->auditLogger->log(
+            $request->user(),
+            'members.imported',
+            null,
+            sprintf(
+                'Imported %d member account(s); %d row(s) failed.',
+                count($imported),
+                count($failed)
+            ),
+            [
+                'imported_count' => count($imported),
+                'failed_count' => count($failed),
+                'imported_member_numbers' => collect($imported)->pluck('member_number')->filter()->values()->all(),
+            ],
+        );
 
         return response()->json([
             'message' => sprintf(

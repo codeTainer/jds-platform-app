@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { ApplicationsSection } from '../sections/exco/ApplicationsSection';
+import { AuditLogSection } from '../sections/exco/AuditLogSection';
 import { CycleStudioSection } from '../sections/exco/CycleStudioSection';
 import { LoansSection } from '../sections/exco/LoansSection';
 import { MembersSection } from '../sections/exco/MembersSection';
@@ -19,6 +20,7 @@ export function ExcoDashboardPage() {
             <Route element={<SavingsDeskSection />} path="savings" />
             <Route element={<ShareoutStudioSection />} path="shareouts" />
             <Route element={<LoansSection />} path="loans" />
+            <Route element={<AuditLogSection />} path="audit" />
             <Route element={<SupportDeskSection />} path="support" />
             <Route element={<ReportsSection />} path="reports" />
             <Route element={<Navigate replace to="/dashboard/exco" />} path="*" />

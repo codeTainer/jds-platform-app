@@ -7,6 +7,7 @@ use App\Models\MembershipFee;
 use App\Models\MembershipFeeSubmission;
 use App\Models\SharePurchase;
 use App\Models\SharePaymentSubmission;
+use App\Support\AuditLogger;
 use App\Support\ProcessNotifier;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -14,7 +15,8 @@ use Illuminate\Http\Request;
 class MemberSavingsController extends Controller
 {
     public function __construct(
-        private readonly ProcessNotifier $processNotifier
+        private readonly ProcessNotifier $processNotifier,
+        private readonly AuditLogger $auditLogger
     ) {
     }
 
@@ -252,6 +254,20 @@ class MemberSavingsController extends Controller
             ],
         );
 
+        $this->auditLogger->log(
+            $request->user(),
+            'shares.submission_created',
+            $submission,
+            'Submitted share payment receipt for ' . Carbon::parse($shareMonth)->format('F Y') . '.',
+            [
+                'submission_id' => $submission->id,
+                'member_number' => $member->member_number,
+                'cycle_code' => $cycle->code,
+                'shares_count' => $submission->shares_count,
+                'expected_amount' => $submission->expected_amount,
+            ],
+        );
+
         return response()->json([
             'message' => 'Share payment receipt submitted successfully and is awaiting EXCO verification.',
             'submission' => $submission,
@@ -342,6 +358,20 @@ class MemberSavingsController extends Controller
             meta: [
                 'member_id' => $member->id,
                 'submission_id' => $submission->id,
+            ],
+        );
+
+        $this->auditLogger->log(
+            $request->user(),
+            'fees.submission_created',
+            $submission,
+            'Submitted membership fee receipt for ' . $cycle->code . '.',
+            [
+                'submission_id' => $submission->id,
+                'member_number' => $member->member_number,
+                'cycle_code' => $cycle->code,
+                'fee_type' => $submission->fee_type,
+                'expected_amount' => $submission->expected_amount,
             ],
         );
 

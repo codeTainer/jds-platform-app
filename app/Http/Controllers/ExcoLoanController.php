@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Loan;
 use App\Models\LoanRepayment;
 use App\Models\LoanRepaymentSubmission;
+use App\Support\AuditLogger;
 use App\Support\ProcessNotifier;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -13,7 +14,8 @@ use Illuminate\Support\Facades\DB;
 class ExcoLoanController extends Controller
 {
     public function __construct(
-        private readonly ProcessNotifier $processNotifier
+        private readonly ProcessNotifier $processNotifier,
+        private readonly AuditLogger $auditLogger
     ) {
     }
 
@@ -88,6 +90,19 @@ class ExcoLoanController extends Controller
             meta: ['loan_id' => $updatedLoan->id],
         );
 
+        $this->auditLogger->log(
+            $request->user(),
+            'loans.approved',
+            $updatedLoan,
+            'Approved loan request #' . $updatedLoan->id . '.',
+            [
+                'loan_id' => $updatedLoan->id,
+                'member_number' => $updatedLoan->member?->member_number,
+                'approved_amount' => $updatedLoan->approved_amount,
+                'total_due_amount' => $updatedLoan->total_due_amount,
+            ],
+        );
+
         return response()->json([
             'message' => 'Loan approved successfully.',
             'loan' => $updatedLoan,
@@ -122,6 +137,17 @@ class ExcoLoanController extends Controller
             actionLabel: 'Open loans',
             level: 'warning',
             meta: ['loan_id' => $freshLoan->id],
+        );
+
+        $this->auditLogger->log(
+            $request->user(),
+            'loans.rejected',
+            $freshLoan,
+            'Rejected loan request #' . $freshLoan->id . '.',
+            [
+                'loan_id' => $freshLoan->id,
+                'member_number' => $freshLoan->member?->member_number,
+            ],
         );
 
         return response()->json([
@@ -181,6 +207,19 @@ class ExcoLoanController extends Controller
             actionLabel: 'View receipt',
             level: 'success',
             meta: ['loan_id' => $updatedLoan->id],
+        );
+
+        $this->auditLogger->log(
+            $request->user(),
+            'loans.disbursed',
+            $updatedLoan,
+            'Disbursed approved loan #' . $updatedLoan->id . '.',
+            [
+                'loan_id' => $updatedLoan->id,
+                'member_number' => $updatedLoan->member?->member_number,
+                'amount' => $updatedLoan->approved_amount,
+                'payment_method' => $data['payment_method'],
+            ],
         );
 
         return response()->json([
@@ -277,6 +316,25 @@ class ExcoLoanController extends Controller
             meta: [
                 'loan_id' => $updatedLoan->id,
                 'submission_id' => $loanRepaymentSubmission->id,
+            ],
+        );
+
+        $this->auditLogger->log(
+            $request->user(),
+            $data['status'] === 'approved' ? 'loans.repayment_approved' : 'loans.repayment_rejected',
+            $loanRepaymentSubmission,
+            sprintf(
+                '%s repayment submission #%d for loan #%d.',
+                $data['status'] === 'approved' ? 'Approved' : 'Rejected',
+                $loanRepaymentSubmission->id,
+                $updatedLoan->id
+            ),
+            [
+                'loan_id' => $updatedLoan->id,
+                'submission_id' => $loanRepaymentSubmission->id,
+                'member_number' => $updatedLoan->member?->member_number,
+                'status' => $data['status'],
+                'amount_paid' => $loanRepaymentSubmission->amount_paid,
             ],
         );
 

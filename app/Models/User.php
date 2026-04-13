@@ -156,4 +156,14 @@ class User extends Authenticatable
             self::ROLE_SUPPORT,
         ], true);
     }
+
+    public function canViewAuditLogs(): bool
+    {
+        return in_array($this->role, [
+            self::ROLE_CHAIRPERSON,
+            self::ROLE_SECRETARY,
+            self::ROLE_TREASURER,
+            self::ROLE_SUPPORT,
+        ], true);
+    }
 }

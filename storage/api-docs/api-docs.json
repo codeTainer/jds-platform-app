@@ -215,6 +215,144 @@
                 ]
             }
         },
+        "/api/exco/audit-logs": {
+            "get": {
+                "tags": [
+                    "EXCO Audit"
+                ],
+                "summary": "Get the EXCO audit trail",
+                "operationId": "d8a4ea8b6958f66b1701e274ed357641",
+                "parameters": [
+                    {
+                        "name": "actor_user_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "module",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "loans"
+                        }
+                    },
+                    {
+                        "name": "action",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "loans.approved"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "date_from",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "date_to",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated audit logs",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "current_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/AuditLog"
+                                            }
+                                        },
+                                        "from": {
+                                            "type": "integer",
+                                            "example": 1,
+                                            "nullable": true
+                                        },
+                                        "last_page": {
+                                            "type": "integer",
+                                            "example": 3
+                                        },
+                                        "per_page": {
+                                            "type": "integer",
+                                            "example": 10
+                                        },
+                                        "to": {
+                                            "type": "integer",
+                                            "example": 10,
+                                            "nullable": true
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 28
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/exco/concerns": {
             "get": {
                 "tags": [
@@ -5859,6 +5997,83 @@
                 },
                 "type": "object"
             },
+            "AuditLog": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 14
+                    },
+                    "action": {
+                        "type": "string",
+                        "example": "loans.approved"
+                    },
+                    "module": {
+                        "type": "string",
+                        "example": "loans"
+                    },
+                    "module_label": {
+                        "type": "string",
+                        "example": "Loans"
+                    },
+                    "action_label": {
+                        "type": "string",
+                        "example": "Approved"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Approved loan request #8 for Ebube Chidi.",
+                        "nullable": true
+                    },
+                    "auditable_type": {
+                        "type": "string",
+                        "example": "App\\Models\\Loan",
+                        "nullable": true
+                    },
+                    "auditable_id": {
+                        "type": "integer",
+                        "example": 8,
+                        "nullable": true
+                    },
+                    "occurred_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-04-13T11:15:00Z",
+                        "nullable": true
+                    },
+                    "metadata": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "actor": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "example": 2
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "Secretary JDS"
+                            },
+                            "email": {
+                                "type": "string",
+                                "example": "secretary@jds.local"
+                            },
+                            "role": {
+                                "type": "string",
+                                "example": "secretary"
+                            },
+                            "member_number": {
+                                "type": "string",
+                                "example": "JDS-EXCO-0002",
+                                "nullable": true
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
             "Concern": {
                 "properties": {
                     "id": {
@@ -7641,6 +7856,10 @@
         {
             "name": "Auth",
             "description": "Auth"
+        },
+        {
+            "name": "EXCO Audit",
+            "description": "EXCO Audit"
         },
         {
             "name": "EXCO Concerns",

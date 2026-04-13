@@ -6,6 +6,7 @@ use App\Models\Loan;
 use App\Models\LoanGuarantorApproval;
 use App\Models\LoanRepaymentSubmission;
 use App\Models\MembershipCycle;
+use App\Support\AuditLogger;
 use App\Support\ProcessNotifier;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -15,7 +16,8 @@ use Illuminate\Validation\Rule;
 class MemberLoanController extends Controller
 {
     public function __construct(
-        private readonly ProcessNotifier $processNotifier
+        private readonly ProcessNotifier $processNotifier,
+        private readonly AuditLogger $auditLogger
     ) {
     }
 
@@ -192,6 +194,20 @@ class MemberLoanController extends Controller
             meta: ['loan_id' => $loan->id],
         );
 
+        $this->auditLogger->log(
+            $request->user(),
+            'loans.requested',
+            $loan,
+            'Submitted a new loan request.',
+            [
+                'loan_id' => $loan->id,
+                'member_number' => $member->member_number,
+                'cycle_code' => $cycle->code,
+                'requested_amount' => $loan->requested_amount,
+                'guarantor_member_number' => $loadedLoan->guarantor?->member_number,
+            ],
+        );
+
         return response()->json([
             'message' => 'Loan request submitted successfully.',
             'loan' => $loadedLoan,
@@ -313,6 +329,22 @@ class MemberLoanController extends Controller
             );
         }
 
+        $this->auditLogger->log(
+            $request->user(),
+            $data['status'] === 'approved' ? 'loans.guarantor_approved' : 'loans.guarantor_rejected',
+            $loan ?? $loanGuarantorApproval,
+            sprintf(
+                '%s guarantor request for loan #%d.',
+                $data['status'] === 'approved' ? 'Approved' : 'Rejected',
+                $approval->loan_id
+            ),
+            [
+                'loan_id' => $approval->loan_id,
+                'guarantor_member_number' => $member->member_number,
+                'status' => $data['status'],
+            ],
+        );
+
         return response()->json([
             'message' => 'Guarantor response recorded successfully.',
             'approval' => $approval,
@@ -335,7 +367,22 @@ class MemberLoanController extends Controller
             ], 422);
         }
 
+        $loanId = $loan->id;
+        $memberNumber = $member->member_number;
+        $requestedAmount = $loan->requested_amount;
         $loan->delete();
+
+        $this->auditLogger->log(
+            $request->user(),
+            'loans.deleted',
+            Loan::class,
+            'Deleted loan request #' . $loanId . ' before disbursement.',
+            [
+                'loan_id' => $loanId,
+                'member_number' => $memberNumber,
+                'requested_amount' => $requestedAmount,
+            ],
+        );
 
         return response()->json([
             'message' => 'Loan request deleted successfully.',
@@ -379,6 +426,17 @@ class MemberLoanController extends Controller
             actionLabel: 'Open loans',
             level: 'success',
             meta: ['loan_id' => $loan->id],
+        );
+
+        $this->auditLogger->log(
+            $request->user(),
+            'loans.disbursement_confirmed',
+            $loan,
+            'Confirmed receipt of a disbursed loan.',
+            [
+                'loan_id' => $loan->id,
+                'member_number' => $member->member_number,
+            ],
         );
 
         return response()->json([
@@ -488,6 +546,19 @@ class MemberLoanController extends Controller
             meta: [
                 'loan_id' => $loan->id,
                 'submission_id' => $submission->id,
+            ],
+        );
+
+        $this->auditLogger->log(
+            $request->user(),
+            'loans.repayment_submitted',
+            $submission,
+            'Submitted a loan repayment receipt for review.',
+            [
+                'loan_id' => $loan->id,
+                'submission_id' => $submission->id,
+                'member_number' => $member->member_number,
+                'amount_paid' => $submission->amount_paid,
             ],
         );
 

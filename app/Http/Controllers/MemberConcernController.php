@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Concern;
+use App\Support\AuditLogger;
 use App\Support\ConcernCatalog;
 use App\Support\ProcessNotifier;
 use Illuminate\Http\Request;
@@ -11,7 +12,8 @@ class MemberConcernController extends Controller
 {
     public function __construct(
         private readonly ConcernCatalog $catalog,
-        private readonly ProcessNotifier $notifier
+        private readonly ProcessNotifier $notifier,
+        private readonly AuditLogger $auditLogger
     )
     {
     }
@@ -134,6 +136,18 @@ class MemberConcernController extends Controller
                 'member_id' => $member->id,
             ],
             exceptUserId: $request->user()?->id,
+        );
+
+        $this->auditLogger->log(
+            $request->user(),
+            'concerns.created',
+            $concern,
+            'Raised a new concern: ' . $concern->subject . '.',
+            [
+                'concern_id' => $concern->id,
+                'member_number' => $member->member_number,
+                'reference_type' => $data['reference_type'],
+            ],
         );
 
         return response()->json([

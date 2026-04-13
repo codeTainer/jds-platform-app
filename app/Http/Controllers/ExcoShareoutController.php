@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\MembershipCycle;
 use App\Models\ShareoutItem;
 use App\Models\ShareoutRun;
+use App\Support\AuditLogger;
 use App\Support\ShareoutCalculator;
 use App\Support\ShareoutProfitCalculator;
 use Carbon\Carbon;
@@ -15,7 +16,8 @@ class ExcoShareoutController extends Controller
 {
     public function __construct(
         private readonly ShareoutCalculator $calculator,
-        private readonly ShareoutProfitCalculator $profitCalculator
+        private readonly ShareoutProfitCalculator $profitCalculator,
+        private readonly AuditLogger $auditLogger
     )
     {
     }
@@ -102,6 +104,20 @@ class ExcoShareoutController extends Controller
                 ->loadSum('items', 'net_payout');
         });
 
+        $this->auditLogger->log(
+            $request->user(),
+            'shareouts.calculated',
+            $savedRun,
+            'Calculated share-out draft for cycle ' . $cycle->code . '.',
+            [
+                'shareout_run_id' => $savedRun->id,
+                'cycle_code' => $cycle->code,
+                'total_profit' => $totalProfit,
+                'admin_fee_rate' => $adminFeeRate,
+                'items_count' => $savedRun->items_count,
+            ],
+        );
+
         return response()->json([
             'message' => 'Share-out draft calculated successfully.',
             'run' => $savedRun,
@@ -187,7 +203,20 @@ class ExcoShareoutController extends Controller
             ], 422);
         }
 
+        $runId = $shareoutRun->id;
+        $cycleCode = $shareoutRun->cycle?->code;
         $shareoutRun->delete();
+
+        $this->auditLogger->log(
+            request()->user(),
+            'shareouts.deleted',
+            ShareoutRun::class,
+            'Deleted calculated share-out run #' . $runId . '.',
+            [
+                'shareout_run_id' => $runId,
+                'cycle_code' => $cycleCode,
+            ],
+        );
 
         return response()->json([
             'message' => 'Share-out run deleted successfully.',
@@ -213,6 +242,17 @@ class ExcoShareoutController extends Controller
             'approved_by' => $request->user()?->id,
             'approved_at' => now(),
         ]);
+
+        $this->auditLogger->log(
+            $request->user(),
+            'shareouts.approved',
+            $shareoutRun,
+            'Approved share-out run #' . $shareoutRun->id . '.',
+            [
+                'shareout_run_id' => $shareoutRun->id,
+                'cycle_code' => $shareoutRun->cycle?->code,
+            ],
+        );
 
         return response()->json([
             'message' => 'Share-out run approved successfully.',
@@ -241,6 +281,17 @@ class ExcoShareoutController extends Controller
             'executed_at' => null,
         ]);
 
+        $this->auditLogger->log(
+            request()->user(),
+            'shareouts.rejected',
+            $shareoutRun,
+            'Rejected share-out run #' . $shareoutRun->id . '.',
+            [
+                'shareout_run_id' => $shareoutRun->id,
+                'cycle_code' => $shareoutRun->cycle?->code,
+            ],
+        );
+
         return response()->json([
             'message' => 'Share-out run rejected successfully.',
             'run' => $shareoutRun->fresh(['cycle', 'approver']),
@@ -266,6 +317,17 @@ class ExcoShareoutController extends Controller
             'executed_at' => now(),
         ]);
 
+        $this->auditLogger->log(
+            request()->user(),
+            'shareouts.executed',
+            $shareoutRun,
+            'Marked share-out run #' . $shareoutRun->id . ' as executed.',
+            [
+                'shareout_run_id' => $shareoutRun->id,
+                'cycle_code' => $shareoutRun->cycle?->code,
+            ],
+        );
+
         return response()->json([
             'message' => 'Share-out run marked as executed.',
             'run' => $shareoutRun->fresh(['cycle', 'approver']),
@@ -290,6 +352,19 @@ class ExcoShareoutController extends Controller
             'status' => 'paid',
             'paid_at' => now(),
         ]);
+
+        $this->auditLogger->log(
+            request()->user(),
+            'shareouts.item_paid',
+            $shareoutItem,
+            'Marked share-out item #' . $shareoutItem->id . ' as paid.',
+            [
+                'shareout_item_id' => $shareoutItem->id,
+                'shareout_run_id' => $shareoutItem->shareout_run_id,
+                'member_number' => $shareoutItem->member?->member_number,
+                'net_payout' => $shareoutItem->net_payout,
+            ],
+        );
 
         return response()->json([
             'message' => 'Share-out item marked as paid.',

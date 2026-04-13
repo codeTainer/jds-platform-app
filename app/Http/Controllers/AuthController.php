@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\UserAccessToken;
+use App\Support\AuditLogger;
 use App\Support\ProcessNotifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -13,7 +14,8 @@ use Illuminate\Validation\Rules\Password;
 class AuthController extends Controller
 {
     public function __construct(
-        private readonly ProcessNotifier $processNotifier
+        private readonly ProcessNotifier $processNotifier,
+        private readonly AuditLogger $auditLogger
     ) {
     }
 
@@ -44,6 +46,17 @@ class AuthController extends Controller
             'last_used_at' => now(),
         ]);
 
+        $this->auditLogger->log(
+            $user,
+            'auth.login',
+            $user,
+            'Signed into the platform.',
+            [
+                'role' => $user->role,
+                'token_id' => $token->id,
+            ],
+        );
+
         return response()->json([
             'message' => $user->must_change_password
                 ? 'Login successful. You must change your password before continuing.'
@@ -63,9 +76,21 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
+        /** @var User|null $user */
+        $user = $request->user();
         $accessToken = $request->attributes->get('accessToken');
 
         if ($accessToken instanceof UserAccessToken) {
+            $this->auditLogger->log(
+                $user,
+                'auth.logout',
+                $user,
+                'Signed out of the platform.',
+                [
+                    'token_id' => $accessToken->id,
+                ],
+            );
+
             $accessToken->delete();
         }
 
@@ -101,6 +126,16 @@ class AuthController extends Controller
             'must_change_password' => false,
             'password_changed_at' => now(),
         ])->save();
+
+        $this->auditLogger->log(
+            $user,
+            'auth.password_changed',
+            $user,
+            'Changed account password successfully.',
+            [
+                'must_change_password' => false,
+            ],
+        );
 
         $this->processNotifier->notifyUser(
             $user,

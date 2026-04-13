@@ -8,6 +8,7 @@ use App\Models\MembershipFee;
 use App\Models\MembershipFeeSubmission;
 use App\Models\SharePurchase;
 use App\Models\SharePaymentSubmission;
+use App\Support\AuditLogger;
 use App\Support\ProcessNotifier;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -18,7 +19,8 @@ use Illuminate\Validation\Rule;
 class ExcoSavingsController extends Controller
 {
     public function __construct(
-        private readonly ProcessNotifier $processNotifier
+        private readonly ProcessNotifier $processNotifier,
+        private readonly AuditLogger $auditLogger
     ) {
     }
 
@@ -156,6 +158,21 @@ class ExcoSavingsController extends Controller
             'notes' => $data['notes'] ?? null,
         ])->load(['member', 'cycle', 'confirmer']);
 
+        $this->auditLogger->log(
+            $request->user(),
+            'shares.recorded',
+            $purchase,
+            'Recorded an official share purchase for ' . $purchase->member?->full_name . '.',
+            [
+                'share_purchase_id' => $purchase->id,
+                'member_number' => $purchase->member?->member_number,
+                'cycle_code' => $purchase->cycle?->code,
+                'share_month' => $purchase->share_month,
+                'shares_count' => $purchase->shares_count,
+                'payment_status' => $purchase->payment_status,
+            ],
+        );
+
         return response()->json([
             'message' => 'Share purchase recorded successfully.',
             'share_purchase' => $purchase,
@@ -240,6 +257,25 @@ class ExcoSavingsController extends Controller
             ],
         );
 
+        $this->auditLogger->log(
+            $request->user(),
+            $data['status'] === 'approved' ? 'shares.submission_approved' : 'shares.submission_rejected',
+            $submission,
+            sprintf(
+                '%s share payment submission #%d for %s.',
+                $data['status'] === 'approved' ? 'Approved' : 'Rejected',
+                $submission->id,
+                $submission->member?->full_name
+            ),
+            [
+                'submission_id' => $submission->id,
+                'member_number' => $submission->member?->member_number,
+                'cycle_code' => $submission->cycle?->code,
+                'status' => $submission->status,
+                'approved_share_purchase_id' => $submission->approved_share_purchase_id,
+            ],
+        );
+
         return response()->json([
             'message' => $data['status'] === 'approved'
                 ? 'Share payment submission approved and posted successfully.'
@@ -320,6 +356,26 @@ class ExcoSavingsController extends Controller
             meta: [
                 'submission_id' => $submission->id,
                 'status' => $submission->status,
+            ],
+        );
+
+        $this->auditLogger->log(
+            $request->user(),
+            $data['status'] === 'approved' ? 'fees.submission_approved' : 'fees.submission_rejected',
+            $submission,
+            sprintf(
+                '%s membership fee submission #%d for %s.',
+                $data['status'] === 'approved' ? 'Approved' : 'Rejected',
+                $submission->id,
+                $submission->member?->full_name
+            ),
+            [
+                'submission_id' => $submission->id,
+                'member_number' => $submission->member?->member_number,
+                'cycle_code' => $submission->cycle?->code,
+                'fee_type' => $submission->fee_type,
+                'status' => $submission->status,
+                'approved_membership_fee_id' => $submission->approved_membership_fee_id,
             ],
         );
 
