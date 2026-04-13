@@ -1713,6 +1713,507 @@
                 ]
             }
         },
+        "/api/exco/reports/summary": {
+            "get": {
+                "tags": [
+                    "EXCO Reports"
+                ],
+                "summary": "Get the EXCO reporting summary for a cycle or the active cycle",
+                "operationId": "f3a45ad4be68cf19fc7177e2e7058059",
+                "parameters": [
+                    {
+                        "name": "membership_cycle_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Report summary",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "cycle": {
+                                            "oneOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/MembershipCycle"
+                                                }
+                                            ],
+                                            "nullable": true
+                                        },
+                                        "summary": {
+                                            "properties": {
+                                                "members_on_platform": {
+                                                    "type": "integer",
+                                                    "example": 24
+                                                },
+                                                "members_with_savings": {
+                                                    "type": "integer",
+                                                    "example": 18
+                                                },
+                                                "total_savings_value": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 8200000
+                                                },
+                                                "membership_fees_paid_total": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 54000
+                                                },
+                                                "loans_disbursed_total": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 3200000
+                                                },
+                                                "loan_service_charge_total": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 320000
+                                                },
+                                                "outstanding_loan_balance": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 850000
+                                                },
+                                                "shareout_net_payout_total": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 9150000
+                                                },
+                                                "shareout_paid_total": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 6100000
+                                                },
+                                                "open_concerns_count": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                },
+                                                "resolved_concerns_count": {
+                                                    "type": "integer",
+                                                    "example": 6
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/exco/reports/savings": {
+            "get": {
+                "tags": [
+                    "EXCO Reports"
+                ],
+                "summary": "Get the EXCO savings report",
+                "operationId": "f44b2fa9904b7232e43074b01e1ec5d1",
+                "parameters": [
+                    {
+                        "name": "membership_cycle_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated savings report",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "current_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Member"
+                                            }
+                                        },
+                                        "from": {
+                                            "type": "integer",
+                                            "example": 1,
+                                            "nullable": true
+                                        },
+                                        "last_page": {
+                                            "type": "integer",
+                                            "example": 3
+                                        },
+                                        "per_page": {
+                                            "type": "integer",
+                                            "example": 10
+                                        },
+                                        "to": {
+                                            "type": "integer",
+                                            "example": 10,
+                                            "nullable": true
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 24
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/exco/reports/loans": {
+            "get": {
+                "tags": [
+                    "EXCO Reports"
+                ],
+                "summary": "Get the EXCO loan report",
+                "operationId": "35879c9ab2ef931fd2fbf84767710ad5",
+                "parameters": [
+                    {
+                        "name": "membership_cycle_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated loan report",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "current_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Loan"
+                                            }
+                                        },
+                                        "from": {
+                                            "type": "integer",
+                                            "example": 1,
+                                            "nullable": true
+                                        },
+                                        "last_page": {
+                                            "type": "integer",
+                                            "example": 2
+                                        },
+                                        "per_page": {
+                                            "type": "integer",
+                                            "example": 10
+                                        },
+                                        "to": {
+                                            "type": "integer",
+                                            "example": 10,
+                                            "nullable": true
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 12
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/exco/reports/shareouts": {
+            "get": {
+                "tags": [
+                    "EXCO Reports"
+                ],
+                "summary": "Get the EXCO share-out report",
+                "operationId": "59e130e7d7190505a4e0562d2fbfa31a",
+                "parameters": [
+                    {
+                        "name": "membership_cycle_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated share-out report",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "current_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/ShareoutItem"
+                                            }
+                                        },
+                                        "from": {
+                                            "type": "integer",
+                                            "example": 1,
+                                            "nullable": true
+                                        },
+                                        "last_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "per_page": {
+                                            "type": "integer",
+                                            "example": 10
+                                        },
+                                        "to": {
+                                            "type": "integer",
+                                            "example": 5,
+                                            "nullable": true
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 5
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/exco/reports/concerns": {
+            "get": {
+                "tags": [
+                    "EXCO Reports"
+                ],
+                "summary": "Get the EXCO concern report",
+                "operationId": "6522181b4c595db340f92ce3c1813b5f",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "reference_type",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated concern report",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "current_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Concern"
+                                            }
+                                        },
+                                        "from": {
+                                            "type": "integer",
+                                            "example": 1,
+                                            "nullable": true
+                                        },
+                                        "last_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "per_page": {
+                                            "type": "integer",
+                                            "example": 10
+                                        },
+                                        "to": {
+                                            "type": "integer",
+                                            "example": 4,
+                                            "nullable": true
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 4
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/exco/membership-fees": {
             "get": {
                 "tags": [
@@ -7160,6 +7661,10 @@
         {
             "name": "EXCO Membership Cycles",
             "description": "EXCO Membership Cycles"
+        },
+        {
+            "name": "EXCO Reports",
+            "description": "EXCO Reports"
         },
         {
             "name": "EXCO Savings",

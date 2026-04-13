@@ -18,6 +18,11 @@ export interface Member {
     concerns_count?: number;
     share_purchases_sum_shares_count?: number | string | null;
     share_purchases_sum_total_amount?: number | string | null;
+    share_purchase_entries_count?: number;
+    membership_fee_entries_count?: number;
+    total_shares_count?: number | string | null;
+    total_saved_value?: number | string | null;
+    membership_fees_paid_total?: number | string | null;
 }
 
 export interface User {
@@ -417,4 +422,23 @@ export interface Concern {
     action_url?: string | null;
     member?: Pick<Member, 'id' | 'member_number' | 'full_name' | 'email'> | null;
     resolver?: Pick<User, 'id' | 'name' | 'role'> | null;
+}
+
+export interface ExcoReportSummary {
+    members_on_platform: number;
+    members_with_savings: number;
+    total_savings_value: number | string;
+    membership_fees_paid_total: number | string;
+    loans_disbursed_total: number | string;
+    loan_service_charge_total: number | string;
+    outstanding_loan_balance: number | string;
+    shareout_net_payout_total: number | string;
+    shareout_paid_total: number | string;
+    open_concerns_count: number;
+    resolved_concerns_count: number;
+}
+
+export interface ExcoReportSummaryResponse {
+    cycle?: MembershipCycle | null;
+    summary: ExcoReportSummary;
 }

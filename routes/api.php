@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ExcoConcernController;
+use App\Http\Controllers\ExcoReportController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ExcoMemberApplicationController;
 use App\Http\Controllers\ExcoMemberController;
@@ -102,6 +103,11 @@ Route::prefix('exco')->middleware('auth.token')->group(function () {
     Route::patch('/shareout-items/{shareoutItem}/mark-paid', [ExcoShareoutController::class, 'markItemPaid']);
     Route::get('/concerns', [ExcoConcernController::class, 'index']);
     Route::patch('/concerns/{concern}', [ExcoConcernController::class, 'update']);
+    Route::get('/reports/summary', [ExcoReportController::class, 'summary']);
+    Route::get('/reports/savings', [ExcoReportController::class, 'savings']);
+    Route::get('/reports/loans', [ExcoReportController::class, 'loans']);
+    Route::get('/reports/shareouts', [ExcoReportController::class, 'shareouts']);
+    Route::get('/reports/concerns', [ExcoReportController::class, 'concerns']);
 
     Route::get('/loans', [ExcoLoanController::class, 'index']);
     Route::patch('/loans/{loan}/approve', [ExcoLoanController::class, 'approve']);

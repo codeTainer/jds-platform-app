@@ -1,7 +1,7 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import type { ReactNode } from "react";
-import { api, applyToken, readToken } from "../lib/api";
-import type { LoginResponse, User } from "../types";
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
+import { api, applyToken, readToken } from '../lib/api';
+import type { LoginResponse, User } from '../types';
 
 interface LoginForm {
     email: string;
@@ -66,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return;
         }
 
-        let timeoutId = 0;
+        let timeoutId: ReturnType<typeof window.setTimeout> | null = null;
 
         const performIdleLogout = async () => {
             window.sessionStorage.setItem(
@@ -85,7 +85,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
 
         const resetIdleTimer = () => {
-            window.clearTimeout(timeoutId);
+            if (timeoutId !== null) {
+                window.clearTimeout(timeoutId);
+            }
+
             timeoutId = window.setTimeout(() => {
                 void performIdleLogout();
             }, idleTimeoutMs);
@@ -100,13 +103,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ];
 
         activityEvents.forEach((eventName) => {
-            window.addEventListener(eventName, resetIdleTimer, { passive: true });
+            window.addEventListener(eventName, resetIdleTimer, {
+                passive: true,
+            });
         });
 
         resetIdleTimer();
 
         return () => {
-            window.clearTimeout(timeoutId);
+            if (timeoutId !== null) {
+                window.clearTimeout(timeoutId);
+            }
 
             activityEvents.forEach((eventName) => {
                 window.removeEventListener(eventName, resetIdleTimer);
@@ -131,10 +138,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setUser(data.user);
             },
             async changePassword(form) {
-                const { data } = await api.post<{ message: string; user: User }>(
-                    "/api/auth/change-password",
-                    form,
-                );
+                const { data } = await api.post<{
+                    message: string;
+                    user: User;
+                }>("/api/auth/change-password", form);
                 setUser(data.user);
             },
             async logout() {
