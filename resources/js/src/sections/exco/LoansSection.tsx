@@ -292,9 +292,9 @@ export function LoansSection() {
             ) : null}
 
             {activeTab === 'loan-workspace' && selectedLoan ? (
-                <div className="mt-6 grid gap-6 xl:grid-cols-2">
+                <div className="loan-workspace-grid mt-6">
                     <Panel eyebrow="Selected loan" title={`${selectedLoan.member?.full_name ?? 'Member'} loan detail`}>
-                        <div className="grid gap-3 text-[0.98rem] text-[var(--muted)]">
+                        <div className="loan-detail-stack">
                             <div>Requested amount: {formatCurrency(selectedLoan.requested_amount)}</div>
                             <div>Approved amount: {formatCurrency(selectedLoan.approved_amount ?? 0)}</div>
                             <div>Total due: {formatCurrency(selectedLoan.total_due_amount ?? 0)}</div>
@@ -303,7 +303,7 @@ export function LoansSection() {
                             <div>Due on: {formatDate(selectedLoan.due_on)}</div>
                         </div>
 
-                        <div className="mt-5 flex flex-wrap gap-3">
+                        <div className="loan-action-group">
                             {selectedLoan.status === 'guarantor_approved' ? (
                                 <button className="rounded-full bg-[var(--forest)] px-4 py-2.5 text-[0.98rem] font-semibold text-white" onClick={() => void approveLoan(selectedLoan.id)} type="button">Approve loan</button>
                             ) : null}
@@ -313,9 +313,9 @@ export function LoansSection() {
                         </div>
                     </Panel>
 
-                    <div className="grid gap-6">
+                    <div className="loan-workspace-stack">
                         <Panel eyebrow="Disbursement" title="Post a loan disbursement">
-                            <form className="grid gap-4" onSubmit={(event) => void disburseLoan(event)}>
+                            <form className="loan-disbursement-form" onSubmit={(event) => void disburseLoan(event)}>
                                 <input className="rounded-[20px] border border-[rgba(23,55,45,0.14)] bg-white px-4 py-3.5 text-[1rem]" onChange={(event) => setDisbursementForm((current) => ({ ...current, payment_method: event.target.value }))} placeholder="Payment method" value={disbursementForm.payment_method} />
                                 <label className="app-field">
                                     <span className="app-field__label">Disbursement receipt</span>
@@ -332,7 +332,7 @@ export function LoansSection() {
                             </form>
 
                             {selectedLoan.disbursement ? (
-                                <div className="mt-4 grid gap-2 text-[0.96rem] text-[var(--muted)]">
+                                <div className="loan-disbursement-meta">
                                     <div>Disbursement status: {selectedLoan.disbursement.status.replace('_', ' ')}</div>
                                     <div>Disbursed at: {formatDate(selectedLoan.disbursement.disbursed_at)}</div>
                                     <div>Member confirmed at: {formatDate(selectedLoan.disbursement.member_confirmed_at)}</div>
@@ -369,10 +369,10 @@ export function LoansSection() {
                                     { key: 'member_note', header: 'Member Note', render: (submission) => submission.member_note ?? 'No note' },
                                     {
                                         key: 'action',
-                                        header: 'Action',
-                                        exportable: false,
-                                        render: (submission) => submission.status === 'pending' ? (
-                                            <div className="flex gap-2">
+                                    header: 'Action',
+                                    exportable: false,
+                                    render: (submission) => submission.status === 'pending' ? (
+                                            <div className="record-action-group">
                                                 <button className="rounded-full bg-[var(--forest)] px-3 py-2 text-[0.9rem] font-semibold text-white" onClick={() => void reviewRepaymentSubmission(submission.id, 'approved')} type="button">Approve</button>
                                                 <button className="rounded-full bg-[var(--danger)] px-3 py-2 text-[0.9rem] font-semibold text-white" onClick={() => void reviewRepaymentSubmission(submission.id, 'rejected')} type="button">Reject</button>
                                             </div>

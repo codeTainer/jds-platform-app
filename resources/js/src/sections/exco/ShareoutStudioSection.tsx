@@ -397,7 +397,7 @@ export function ShareoutStudioSection() {
                                     header: 'Action',
                                     exportable: false,
                                     render: (run) => (
-                                        <div className="flex items-center gap-2">
+                                        <div className="record-action-group record-action-group--compact">
                                             <button
                                                 aria-label={`View share-out run for ${run.cycle?.code ?? 'cycle'}`}
                                                 className="app-icon-button"
@@ -463,7 +463,7 @@ export function ShareoutStudioSection() {
 
                     <Panel
                         action={(
-                            <div className="flex flex-wrap gap-3">
+                            <div className="shareout-action-group">
                                 {selectedRun.status === 'calculated' && canApprove ? <button className="rounded-full bg-[var(--forest)] px-4 py-2.5 text-[0.96rem] font-semibold text-white" onClick={() => void approveRun()} type="button">Approve run</button> : null}
                                 {['calculated', 'approved'].includes(selectedRun.status) && canApprove ? <button className="rounded-full bg-[var(--danger)] px-4 py-2.5 text-[0.96rem] font-semibold text-white" onClick={() => void rejectRun()} type="button">Reject run</button> : null}
                                 {selectedRun.status === 'approved' && canExecute ? <button className="rounded-full bg-[var(--accent)] px-4 py-2.5 text-[0.96rem] font-semibold text-white" onClick={() => void executeRun()} type="button">Mark as executed</button> : null}
@@ -548,7 +548,7 @@ export function ShareoutStudioSection() {
                             <p>
                                 Only calculated runs can be deleted. Approved, rejected, or executed runs must stay on record.
                             </p>
-                            <div className="flex flex-wrap gap-3 pt-2">
+                            <div className="shareout-confirmation-actions">
                                 <button className="rounded-full border border-[rgba(12,59,102,0.18)] bg-white px-4 py-2.5 text-[0.96rem] font-semibold text-[var(--ink)]" onClick={() => setRunPendingDelete(null)} type="button">
                                     Cancel
                                 </button>

@@ -147,7 +147,7 @@ function MemberShareoutsSection() {
             {error ? <Notice tone="danger">{error}</Notice> : null}
 
             {overview ? (
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <div className="member-summary-grid grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                     <SummaryCard label="Share-out runs" value={String(overview.summary.shareout_items_count)} />
                     <SummaryCard label="Gross return" value={formatCurrency(overview.summary.total_gross_return)} />
                     <SummaryCard label="Loan deductions" value={formatCurrency(overview.summary.total_outstanding_loan_deduction)} />
@@ -230,7 +230,7 @@ function MemberShareoutsSection() {
                             <p className="shareout-explainer__lead">
                                 This breakdown shows the full cycle profit pool, the 20% admin retention, your savings ratio within the total savings pool, and the final payout after any outstanding loan deduction.
                             </p>
-                            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                            <div className="member-summary-grid grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                                 <SummaryCard label="Loan service charges" value={formatCurrency(selectedItem.profit_breakdown?.loan_service_charge_total ?? 0)} />
                                 <SummaryCard label="Default penalties" value={formatCurrency(selectedItem.profit_breakdown?.default_penalty_total ?? 0)} />
                                 <SummaryCard label="Membership fees" value={formatCurrency(selectedItem.profit_breakdown?.membership_fee_total ?? 0)} />
@@ -521,7 +521,7 @@ function MemberLoansSection() {
             </div>
 
             {activeTab === 'overview' && overview ? (
-                <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <div className="member-summary-grid mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                     <SummaryCard label="Share value" value={formatCurrency(overview.summary.share_value)} />
                     <SummaryCard label="Loan multiplier" value={`${overview.summary.loan_multiplier}x`} />
                     <SummaryCard label="Eligible amount" value={formatCurrency(overview.summary.eligible_amount)} />
@@ -532,7 +532,7 @@ function MemberLoansSection() {
             {activeTab === 'request-loan' ? (
                 <div className="mt-6">
                     <Panel eyebrow="Loan request" title="Submit a new loan request">
-                    <form className="grid gap-4" onSubmit={(event) => void requestLoan(event)}>
+                    <form className="member-request-form grid gap-4" onSubmit={(event) => void requestLoan(event)}>
                         <input className="rounded-[20px] border border-[rgba(23,55,45,0.14)] bg-white px-4 py-3.5 text-[1rem]" min="1" onChange={(event) => setLoanForm((current) => ({ ...current, requested_amount: event.target.value }))} placeholder="Requested amount" type="number" value={loanForm.requested_amount} />
                         <select className="rounded-[20px] border border-[rgba(23,55,45,0.14)] bg-white px-4 py-3.5 text-[1rem]" onChange={(event) => setLoanForm((current) => ({ ...current, guarantor_member_id: event.target.value }))} value={loanForm.guarantor_member_id}>
                             <option value="">Select guarantor</option>
@@ -560,7 +560,7 @@ function MemberLoansSection() {
                                     header: 'Action',
                                     exportable: false,
                                     render: (approval) => approval.status === 'pending' ? (
-                                        <div className="flex gap-2">
+                                        <div className="record-action-group">
                                             <button className="rounded-full bg-[var(--forest)] px-3 py-2 text-[0.9rem] font-semibold text-white" onClick={() => void respondToGuarantorApproval(approval.id, 'approved')} type="button">Approve</button>
                                             <button className="rounded-full bg-[var(--danger)] px-3 py-2 text-[0.9rem] font-semibold text-white" onClick={() => void respondToGuarantorApproval(approval.id, 'rejected')} type="button">Reject</button>
                                         </div>
@@ -586,15 +586,15 @@ function MemberLoansSection() {
                 <div className="mt-6 grid gap-6">
                     <Panel eyebrow="Repayment receipt" title="Submit a loan repayment receipt">
                         {overview?.summary.active_loan && ['disbursed', 'partially_repaid'].includes(overview.summary.active_loan.status) ? (
-                            <form className="grid gap-4 md:grid-cols-2" onSubmit={(event) => void submitRepaymentReceipt(event)}>
+                            <form className="member-upload-form grid gap-4 md:grid-cols-2" onSubmit={(event) => void submitRepaymentReceipt(event)}>
                                 <div className="app-panel repayment-summary-card md:col-span-2">
-                                    <div className="grid gap-3 text-[0.98rem] text-[var(--muted)] md:grid-cols-3">
+                                    <div className="member-inline-summary-grid grid gap-3 text-[0.98rem] text-[var(--muted)] md:grid-cols-3">
                                         <div>Outstanding amount: {formatCurrency(overview.summary.active_loan.outstanding_amount ?? 0)}</div>
                                         <div>Total due: {formatCurrency(overview.summary.active_loan.total_due_amount ?? 0)}</div>
                                         <div>Due on: {formatDate(overview.summary.active_loan.due_on)}</div>
                                     </div>
                                     {overview.summary.active_loan.disbursement ? (
-                                        <div className="mt-4 grid gap-3 text-[0.98rem] text-[var(--muted)] md:grid-cols-3">
+                                        <div className="member-inline-summary-grid mt-4 grid gap-3 text-[0.98rem] text-[var(--muted)] md:grid-cols-3">
                                             <div>Disbursement status: {overview.summary.active_loan.disbursement.status.replace('_', ' ')}</div>
                                             <div>Disbursed at: {formatDate(overview.summary.active_loan.disbursement.disbursed_at)}</div>
                                             <div>
@@ -1050,7 +1050,7 @@ function MemberSavingsSection() {
                     </Notice>
 
                     {overview ? (
-                        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                        <div className="member-summary-grid grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                             <SummaryCard label="Total share entries" value={String(overview.summary.share_purchases_count)} />
                             <SummaryCard label="Total shares" value={String(overview.summary.total_shares_count)} />
                             <SummaryCard label="Share value" value={formatCurrency(overview.summary.total_share_value)} />
@@ -1079,7 +1079,7 @@ function MemberSavingsSection() {
             {activeTab === 'share-payment' ? (
                 <div className="mt-6 grid gap-6">
                     <Panel eyebrow="Share payment" title="Submit a share payment receipt">
-                    <form className="grid gap-4 md:grid-cols-2" onSubmit={(event) => void submitSharePayment(event)}>
+                    <form className="member-upload-form grid gap-4 md:grid-cols-2" onSubmit={(event) => void submitSharePayment(event)}>
                         <label className="app-field">
                             <span className="app-field__label">Cycle</span>
                             <select className="app-field__control" onChange={(event) => setSubmissionForm((current) => ({ ...current, membership_cycle_id: event.target.value }))} required value={submissionForm.membership_cycle_id}>
@@ -1166,7 +1166,7 @@ function MemberSavingsSection() {
             {activeTab === 'fee-payment' ? (
                 <div className="mt-6 grid gap-6">
                     <Panel eyebrow="Membership fee payment" title="Submit a membership fee receipt">
-                    <form className="grid gap-4 md:grid-cols-2" onSubmit={(event) => void submitMembershipFeeReceipt(event)}>
+                    <form className="member-upload-form grid gap-4 md:grid-cols-2" onSubmit={(event) => void submitMembershipFeeReceipt(event)}>
                         <label className="app-field">
                             <span className="app-field__label">Cycle</span>
                             <select className="app-field__control" onChange={(event) => setMembershipFeeForm((current) => ({ ...current, membership_cycle_id: event.target.value }))} required value={membershipFeeForm.membership_cycle_id}>

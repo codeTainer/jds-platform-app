@@ -38,6 +38,20 @@ function CloseIcon() {
     );
 }
 
+function MenuIcon() {
+    return (
+        <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+            <path
+                d="M4.5 7.5h15M4.5 12h15M4.5 16.5h15"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.8"
+            />
+        </svg>
+    );
+}
+
 function OverviewIcon() {
     return (
         <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
@@ -177,6 +191,7 @@ export function DashboardLayout() {
     const { notifications, unreadCount, loading, refresh, markRead, markAllRead } = useNotifications();
     const navigate = useNavigate();
     const [notificationsOpen, setNotificationsOpen] = useState(false);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
 
     const menu: MenuItem[] = isExco
         ? [
@@ -223,8 +238,18 @@ export function DashboardLayout() {
     return (
         <div className="dashboard-shell">
             <div className="dashboard-layout">
-                <aside className="dashboard-sidebar">
-                    <BrandMark />
+                <aside className={sidebarOpen ? 'dashboard-sidebar dashboard-sidebar--open' : 'dashboard-sidebar'}>
+                    <div className="dashboard-sidebar__brand-row">
+                        <BrandMark />
+                        <button
+                            aria-label="Close menu"
+                            className="dashboard-sidebar__close"
+                            onClick={() => setSidebarOpen(false)}
+                            type="button"
+                        >
+                            <CloseIcon />
+                        </button>
+                    </div>
                     <div className="dashboard-sidebar__profile">
                         <div className="dashboard-sidebar__eyebrow">
                             {isExco ? 'EXCO dashboard' : 'Member dashboard'}
@@ -239,6 +264,7 @@ export function DashboardLayout() {
                                 key={path}
                                 className={({ isActive }) => isActive ? 'dashboard-nav-link dashboard-nav-link-active' : 'dashboard-nav-link dashboard-nav-link-idle'}
                                 end={path === '/dashboard/exco' || path === '/dashboard/member'}
+                                onClick={() => setSidebarOpen(false)}
                                 to={path}
                             >
                                 <span className="dashboard-nav-link__icon">{icon}</span>
@@ -271,6 +297,16 @@ export function DashboardLayout() {
 
                 <main className="dashboard-main">
                     <div className="dashboard-main__topbar">
+                        <div className="dashboard-main__topbar-left">
+                            <button
+                                aria-label="Open menu"
+                                className="dashboard-mobile-menu"
+                                onClick={() => setSidebarOpen(true)}
+                                type="button"
+                            >
+                                <MenuIcon />
+                            </button>
+                        </div>
                         <button
                             className="dashboard-notifications-trigger"
                             onClick={() => void openNotifications()}
@@ -286,6 +322,14 @@ export function DashboardLayout() {
                     <Outlet />
                 </main>
             </div>
+
+            {sidebarOpen ? (
+                <div
+                    className="dashboard-sidebar-overlay"
+                    onClick={() => setSidebarOpen(false)}
+                    role="presentation"
+                />
+            ) : null}
 
             {notificationsOpen ? (
                 <div className="dashboard-notifications-overlay" onClick={() => setNotificationsOpen(false)} role="presentation">

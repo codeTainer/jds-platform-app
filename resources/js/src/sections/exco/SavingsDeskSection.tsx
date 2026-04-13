@@ -294,7 +294,7 @@ export function SavingsDeskSection() {
                                     header: 'Action',
                                     exportable: false,
                                     render: (submission) => submission.status === 'pending' ? (
-                                        <div className="flex gap-2">
+                                        <div className="record-action-group">
                                             <button className="rounded-full bg-[var(--forest)] px-3 py-2 text-[0.9rem] font-semibold text-white" onClick={() => void reviewShareSubmission(submission.id, 'approved')} type="button">Approve</button>
                                             <button className="rounded-full bg-[var(--danger)] px-3 py-2 text-[0.9rem] font-semibold text-white" onClick={() => void reviewShareSubmission(submission.id, 'rejected')} type="button">Reject</button>
                                         </div>
@@ -403,7 +403,7 @@ export function SavingsDeskSection() {
                                     header: 'Action',
                                     exportable: false,
                                     render: (submission) => submission.status === 'pending' ? (
-                                        <div className="flex gap-2">
+                                        <div className="record-action-group">
                                             <button className="rounded-full bg-[var(--forest)] px-3 py-2 text-[0.9rem] font-semibold text-white" onClick={() => void reviewMembershipFeeSubmission(submission.id, 'approved')} type="button">Approve</button>
                                             <button className="rounded-full bg-[var(--danger)] px-3 py-2 text-[0.9rem] font-semibold text-white" onClick={() => void reviewMembershipFeeSubmission(submission.id, 'rejected')} type="button">Reject</button>
                                         </div>

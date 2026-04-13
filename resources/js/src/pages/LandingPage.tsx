@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { Field } from "../components/ui/Field";
@@ -47,6 +48,20 @@ function LockIcon() {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth="1.7"
+            />
+        </svg>
+    );
+}
+
+function MenuIcon() {
+    return (
+        <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+            <path
+                d="M4.5 7.5h15M4.5 12h15M4.5 16.5h15"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.8"
             />
         </svg>
     );
@@ -282,10 +297,12 @@ function formatNumber(value: number | string | undefined) {
 export function LandingPage() {
     const { login } = useAuth();
     const navigate = useNavigate();
+    const [loginModalOpen, setLoginModalOpen] = useState(false);
     const [signupOpen, setSignupOpen] = useState(false);
     const [constitutionOpen, setConstitutionOpen] = useState(false);
     const [shareFlowOpen, setShareFlowOpen] = useState(false);
     const [loanFlowOpen, setLoanFlowOpen] = useState(false);
+    const [mobileNavOpen, setMobileNavOpen] = useState(false);
     const [currentSlide, setCurrentSlide] = useState(0);
     const [summary, setSummary] = useState<PublicSummaryResponse | null>(null);
     const [summaryError, setSummaryError] = useState("");
@@ -350,6 +367,126 @@ export function LandingPage() {
         [summary],
     );
 
+    async function handleLoginSubmit(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+        setSubmitting(true);
+        setError("");
+
+        try {
+            await login(form);
+            setLoginModalOpen(false);
+            navigate("/");
+        } catch (requestError: any) {
+            setError(
+                requestError.response?.data?.message ??
+                    "Unable to sign in.",
+            );
+        } finally {
+            setSubmitting(false);
+        }
+    }
+
+    function openLoginForm() {
+        if (window.innerWidth <= 820) {
+            setLoginModalOpen(true);
+            return;
+        }
+
+        document.getElementById("auth")?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+        });
+    }
+
+    const loginFormContent = (
+        <>
+            <div className="landing-login-card__header">
+                <div className="landing-login-card__eyebrow">
+                    Member Access
+                </div>
+                <h2>Login to Continue</h2>
+                <p>
+                    Existing members and EXCO officers use the
+                    same login. Your dashboard opens based on
+                    your role.
+                </p>
+            </div>
+
+            <form className="landing-form" onSubmit={(event) => void handleLoginSubmit(event)}>
+                <Field
+                    label="Email"
+                    onChange={(value) =>
+                        setForm((current) => ({
+                            ...current,
+                            email: value,
+                        }))
+                    }
+                    icon={<EmailIcon />}
+                    placeholder="Enter your email address"
+                    type="email"
+                    value={form.email}
+                />
+                <Field
+                    label="Password"
+                    onChange={(value) =>
+                        setForm((current) => ({
+                            ...current,
+                            password: value,
+                        }))
+                    }
+                    icon={<LockIcon />}
+                    placeholder="........"
+                    type="password"
+                    value={form.password}
+                />
+                <label className="landing-remember">
+                    <input
+                        checked={form.remember}
+                        onChange={(event) =>
+                            setForm((current) => ({
+                                ...current,
+                                remember: event.target.checked,
+                            }))
+                        }
+                        type="checkbox"
+                    />
+                    <span>Keep me signed in</span>
+                </label>
+                {error ? (
+                    <Notice tone="danger">{error}</Notice>
+                ) : null}
+                <button
+                    className="landing-btn landing-btn--primary landing-btn--block"
+                    disabled={submitting}
+                    type="submit"
+                >
+                    {submitting ? "Signing in..." : "Sign in"}
+                </button>
+            </form>
+
+            <div className="landing-login-card__footer">
+                <button
+                    className="landing-btn landing-btn--secondary"
+                    onClick={() => {
+                        setLoginModalOpen(false);
+                        setSignupOpen(true);
+                    }}
+                    type="button"
+                >
+                    Register
+                </button>
+                <a
+                    className="landing-btn landing-btn--secondary"
+                    href="/swagger"
+                    target="_blank"
+                    rel="noreferrer"
+                >
+                    API Docs
+                </a>
+            </div>
+        </>
+    );
+
     return (
         <>
             <div className="landing-shell">
@@ -367,14 +504,31 @@ export function LandingPage() {
                             </div>
                         </a>
 
-                        <nav className="landing-nav">
-                            <a href="#home">Home</a>
-                            <a href="#about">About</a>
-                            <a href="#services">Services</a>
-                            <a href="#indices">Indices</a>
-                            <a className="landing-nav__cta" href="#auth">
+                        <button
+                            aria-expanded={mobileNavOpen}
+                            aria-label="Toggle navigation"
+                            className="landing-nav-toggle"
+                            onClick={() => setMobileNavOpen((current) => !current)}
+                            type="button"
+                        >
+                            <MenuIcon />
+                        </button>
+
+                        <nav className={mobileNavOpen ? "landing-nav landing-nav--open" : "landing-nav"}>
+                            <a href="#home" onClick={() => setMobileNavOpen(false)}>Home</a>
+                            <a href="#about" onClick={() => setMobileNavOpen(false)}>About</a>
+                            <a href="#services" onClick={() => setMobileNavOpen(false)}>Services</a>
+                            <a href="#indices" onClick={() => setMobileNavOpen(false)}>Indices</a>
+                            <button
+                                className="landing-nav__cta"
+                                onClick={() => {
+                                    setMobileNavOpen(false);
+                                    openLoginForm();
+                                }}
+                                type="button"
+                            >
                                 Login | Register
-                            </a>
+                            </button>
                         </nav>
                     </div>
                 </header>
@@ -390,12 +544,13 @@ export function LandingPage() {
                                 <h1>{activeSlide.title}</h1>
                                 <p>{activeSlide.text}</p>
                                 <div className="landing-hero__actions">
-                                    <a
+                                    <button
                                         className="landing-btn landing-btn--light"
-                                        href="#auth"
+                                        onClick={openLoginForm}
+                                        type="button"
                                     >
                                         Login
-                                    </a>
+                                    </button>
                                     <button
                                         className="landing-btn landing-btn--outline-light"
                                         onClick={() => setSignupOpen(true)}
@@ -422,109 +577,7 @@ export function LandingPage() {
                         </div>
 
                         <aside className="landing-login-card" id="auth">
-                            <div className="landing-login-card__header">
-                                <div className="landing-login-card__eyebrow">
-                                    Member Access
-                                </div>
-                                <h2>Login to Continue</h2>
-                                <p>
-                                    Existing members and EXCO officers use the
-                                    same login. Your dashboard opens based on
-                                    your role.
-                                </p>
-                            </div>
-
-                            <form
-                                className="landing-form"
-                                onSubmit={async (event) => {
-                                    event.preventDefault();
-                                    setSubmitting(true);
-                                    setError("");
-                                    try {
-                                        await login(form);
-                                        navigate("/");
-                                    } catch (requestError: any) {
-                                        setError(
-                                            requestError.response?.data
-                                                ?.message ??
-                                                "Unable to sign in.",
-                                        );
-                                    } finally {
-                                        setSubmitting(false);
-                                    }
-                                }}
-                            >
-                                <Field
-                                    label="Email"
-                                    onChange={(value) =>
-                                        setForm((current) => ({
-                                            ...current,
-                                            email: value,
-                                        }))
-                                    }
-                                    icon={<EmailIcon />}
-                                    placeholder="Enter your email address"
-                                    type="email"
-                                    value={form.email}
-                                />
-                                <Field
-                                    label="Password"
-                                    onChange={(value) =>
-                                        setForm((current) => ({
-                                            ...current,
-                                            password: value,
-                                        }))
-                                    }
-                                    icon={<LockIcon />}
-                                    placeholder="........"
-                                    type="password"
-                                    value={form.password}
-                                />
-                                <label className="landing-remember">
-                                    <input
-                                        checked={form.remember}
-                                        onChange={(event) =>
-                                            setForm((current) => ({
-                                                ...current,
-                                                remember: event.target.checked,
-                                            }))
-                                        }
-                                        type="checkbox"
-                                    />
-                                    <span>Keep me signed in</span>
-                                </label>
-                                {error ? (
-                                    <Notice tone="danger">{error}</Notice>
-                                ) : null}
-                                {idleNotice ? (
-                                    <Notice tone="danger">{idleNotice}</Notice>
-                                ) : null}
-                                <button
-                                    className="landing-btn landing-btn--primary landing-btn--block"
-                                    disabled={submitting}
-                                    type="submit"
-                                >
-                                    {submitting ? "Signing in..." : "Sign in"}
-                                </button>
-                            </form>
-
-                            <div className="landing-login-card__footer">
-                                <button
-                                    className="landing-btn landing-btn--secondary"
-                                    onClick={() => setSignupOpen(true)}
-                                    type="button"
-                                >
-                                    Register
-                                </button>
-                                <a
-                                    className="landing-btn landing-btn--secondary"
-                                    href="/swagger"
-                                    target="_blank"
-                                    rel="noreferrer"
-                                >
-                                    API Docs
-                                </a>
-                            </div>
+                            {loginFormContent}
                         </aside>
                     </div>
                 </section>
@@ -696,6 +749,66 @@ export function LandingPage() {
 
             {signupOpen ? (
                 <SignupModal onClose={() => setSignupOpen(false)} />
+            ) : null}
+            {loginModalOpen ? (
+                <div className="constitution-modal-backdrop">
+                    <div className="constitution-modal constitution-modal--narrow landing-login-modal">
+                        <div className="constitution-modal__header">
+                            <div>
+                                <div className="constitution-modal__eyebrow">
+                                    Member Access
+                                </div>
+                                <h3>Sign in to continue</h3>
+                            </div>
+                            <button
+                                className="constitution-modal__close"
+                                onClick={() => setLoginModalOpen(false)}
+                                type="button"
+                            >
+                                Close
+                            </button>
+                        </div>
+                        <div className="constitution-modal__body">
+                            <div className="landing-login-card landing-login-modal__card">
+                                {loginFormContent}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ) : null}
+            {idleNotice ? (
+                <div className="constitution-modal-backdrop">
+                    <div className="constitution-modal constitution-modal--narrow session-expired-modal">
+                        <div className="constitution-modal__header session-expired-modal__header">
+                            <div>
+                                <div className="constitution-modal__eyebrow">
+                                    Session Notice
+                                </div>
+                                <h3>Signed out for inactivity</h3>
+                            </div>
+                            <button
+                                className="constitution-modal__close"
+                                onClick={() => setIdleNotice("")}
+                                type="button"
+                            >
+                                Close
+                            </button>
+                        </div>
+
+                        <div className="constitution-modal__body">
+                            <div className="session-expired-modal__body">
+                                <p>{idleNotice}</p>
+                                <button
+                                    className="landing-btn landing-btn--primary"
+                                    onClick={() => setIdleNotice("")}
+                                    type="button"
+                                >
+                                    Sign in again
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             ) : null}
             {constitutionOpen ? (
                 <div className="constitution-modal-backdrop">

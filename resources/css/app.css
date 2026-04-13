@@ -339,6 +339,14 @@ a:active {
     gap: 0.75rem;
 }
 
+.app-table-toolbar__group--primary {
+    flex: 1 1 22rem;
+}
+
+.app-table-toolbar__group--exports {
+    justify-content: flex-end;
+}
+
 .app-toolbar-button {
     align-items: center;
     background: #ffffff;
@@ -365,6 +373,41 @@ a:active {
     background: var(--forest);
     border-color: var(--forest);
     color: #ffffff;
+}
+
+.app-table-pagination {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+    justify-content: space-between;
+    margin-top: 1rem;
+}
+
+.app-table-pagination__meta {
+    color: var(--muted);
+    font-size: 0.95rem;
+}
+
+.app-table-pagination__actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.app-table-pagination__button {
+    background: #ffffff;
+    border: 1px solid rgba(23, 55, 45, 0.12);
+    border-radius: 999px;
+    box-shadow: 0 10px 24px rgba(23, 55, 45, 0.04);
+    font-size: 0.96rem;
+    font-weight: 700;
+    min-height: 44px;
+    padding: 0.7rem 1.1rem;
+}
+
+.app-table-pagination__button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
 }
 
 .app-check-tile {
@@ -635,23 +678,54 @@ a:active {
     gap: 0.5rem;
 }
 
-.landing-nav a {
+.landing-nav-toggle {
+    align-items: center;
+    background: linear-gradient(135deg, #12355a, #0c5fa8);
+    border: none;
+    border-radius: 14px;
+    box-shadow: 0 14px 28px rgba(10, 75, 134, 0.18);
+    color: #ffffff;
+    display: none;
+    height: 46px;
+    justify-content: center;
+    width: 46px;
+}
+
+.landing-nav-toggle svg {
+    display: block;
+    height: 18px;
+    width: 18px;
+}
+
+.landing-nav a,
+.landing-nav button:not(.landing-nav__cta) {
     border-radius: 999px;
+    border: none;
+    background: transparent;
     color: #345168;
+    cursor: pointer;
     font-size: 0.98rem;
     font-weight: 600;
     padding: 0.7rem 1rem;
     text-decoration: none;
 }
 
-.landing-nav a:hover {
+.landing-nav a:hover,
+.landing-nav button:not(.landing-nav__cta):hover {
     background: rgba(11, 76, 137, 0.06);
     color: #0b4c89;
 }
 
 .landing-nav__cta {
     background: #0b4c89;
+    border-radius: 999px;
+    border: none;
     color: #ffffff !important;
+    cursor: pointer;
+    font-size: 0.98rem;
+    font-weight: 600;
+    padding: 0.7rem 1rem;
+    text-decoration: none;
 }
 
 .landing-nav__cta:hover {
@@ -823,6 +897,13 @@ a:active {
     border-radius: 26px;
     box-shadow: 0 28px 70px rgba(17, 45, 72, 0.09);
     padding: 2rem;
+}
+
+.landing-login-modal__card {
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0;
 }
 
 .landing-login-card__eyebrow,
@@ -1180,6 +1261,29 @@ a:active {
     padding: 1.6rem;
 }
 
+.session-expired-modal__header {
+    background: linear-gradient(135deg, #a73f31, #8d3c2d);
+}
+
+.session-expired-modal {
+    max-width: 520px;
+}
+
+.session-expired-modal__body {
+    background: linear-gradient(180deg, rgba(141, 60, 45, 0.05), rgba(141, 60, 45, 0.02));
+    border: 1px solid rgba(141, 60, 45, 0.14);
+    border-radius: 20px;
+    display: grid;
+    gap: 1rem;
+    padding: 1.15rem;
+}
+
+.session-expired-modal__body p {
+    color: #5e6872;
+    line-height: 1.8;
+    margin: 0;
+}
+
 .constitution-section + .constitution-section {
     margin-top: 1.4rem;
 }
@@ -1407,6 +1511,44 @@ a:active {
     padding: 1.75rem 1.4rem;
 }
 
+.dashboard-sidebar__brand-row {
+    align-items: flex-start;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+}
+
+.dashboard-sidebar__close,
+.dashboard-mobile-menu {
+    align-items: center;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    color: #ffffff;
+    display: inline-flex;
+    height: 44px;
+    justify-content: center;
+    width: 44px;
+}
+
+.dashboard-sidebar__close svg,
+.dashboard-mobile-menu svg {
+    display: block;
+    height: 18px;
+    width: 18px;
+}
+
+.dashboard-sidebar__close {
+    display: none;
+}
+
+.dashboard-sidebar-overlay {
+    background: rgba(8, 29, 49, 0.4);
+    inset: 0;
+    position: fixed;
+    z-index: 149;
+}
+
 .dashboard-sidebar .app-brand__title,
 .dashboard-sidebar .app-brand__subtitle {
     color: #ffffff;
@@ -1528,9 +1670,31 @@ a:active {
 }
 
 .dashboard-main__topbar {
+    align-items: center;
     display: flex;
-    justify-content: flex-end;
+    gap: 1rem;
+    justify-content: space-between;
     margin-bottom: 1rem;
+}
+
+.dashboard-main__topbar-left {
+    align-items: center;
+    display: flex;
+    gap: 0.75rem;
+}
+
+.dashboard-mobile-menu {
+    background: linear-gradient(135deg, #12355a, #0c5fa8);
+    box-shadow: 0 12px 28px rgba(14, 49, 83, 0.14);
+    display: none;
+}
+
+.dashboard-mobile-menu:hover {
+    background: linear-gradient(135deg, #0c5fa8, #0a4b86);
+}
+
+.dashboard-sidebar__close:hover {
+    background: rgba(255, 255, 255, 0.14);
 }
 
 .dashboard-notifications-trigger {
@@ -1953,6 +2117,63 @@ a:active {
     margin: 0;
 }
 
+.record-action-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.record-action-group--compact {
+    align-items: center;
+}
+
+.loan-workspace-grid {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.loan-workspace-stack,
+.loan-detail-stack,
+.loan-disbursement-form,
+.loan-disbursement-meta {
+    display: grid;
+    gap: 1rem;
+}
+
+.loan-detail-stack {
+    color: var(--muted);
+    font-size: 0.98rem;
+}
+
+.loan-action-group,
+.shareout-action-group,
+.shareout-confirmation-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.loan-action-group {
+    margin-top: 1.25rem;
+}
+
+.loan-disbursement-meta {
+    color: var(--muted);
+    font-size: 0.96rem;
+    margin-top: 1rem;
+}
+
+.member-request-form,
+.member-upload-form {
+    display: grid;
+    gap: 1rem;
+}
+
+.member-inline-summary-grid {
+    align-items: start;
+}
+
 .auth-gate-shell {
     min-height: 100vh;
     display: flex;
@@ -2106,7 +2327,6 @@ a:active {
 
 @media (max-width: 820px) {
     .landing-topbar__inner,
-    .landing-nav,
     .landing-hero__carousel,
     .landing-about-grid,
     .landing-service-grid,
@@ -2120,8 +2340,42 @@ a:active {
         justify-content: initial;
     }
 
+    .landing-topbar__inner {
+        align-items: start;
+        gap: 1rem;
+    }
+
+    .landing-nav-toggle {
+        display: inline-flex;
+        justify-self: end;
+    }
+
     .landing-nav {
-        gap: 0.25rem;
+        background: #ffffff;
+        border: 1px solid rgba(9, 51, 90, 0.08);
+        border-radius: 22px;
+        box-shadow: 0 20px 46px rgba(17, 45, 72, 0.08);
+        gap: 0.35rem;
+        max-height: 0;
+        opacity: 0;
+        overflow: hidden;
+        padding: 0;
+        transition: max-height 220ms ease, opacity 180ms ease, padding 180ms ease;
+        width: 100%;
+    }
+
+    .landing-nav--open {
+        max-height: 22rem;
+        opacity: 1;
+        padding: 0.65rem;
+    }
+
+    .landing-nav a {
+        width: 100%;
+    }
+
+    .landing-hero__carousel {
+        grid-template-columns: 1fr;
     }
 
     .landing-hero__content {
@@ -2129,24 +2383,32 @@ a:active {
     }
 
     .landing-login-card {
-        padding: 1.5rem;
+        display: none;
     }
 
     .landing-hero__dots {
         left: 2rem;
     }
 
+    .landing-login-card__footer,
+    .landing-hero__actions,
+    .landing-section__actions {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .landing-btn,
+    .landing-login-card__footer .landing-btn {
+        width: 100%;
+    }
+
+    .landing-login-modal__card {
+        display: block;
+    }
+
     .signup-modal__layout,
     .signup-modal__form {
         grid-template-columns: 1fr;
-    }
-
-    .dashboard-layout {
-        grid-template-columns: 1fr;
-    }
-
-    .dashboard-sidebar {
-        min-height: auto;
     }
 
     .dashboard-main {
@@ -2168,13 +2430,178 @@ a:active {
     .members-intake-form__row {
         grid-template-columns: 1fr;
     }
+
+    .loan-workspace-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 980px) {
+    .dashboard-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-sidebar {
+        bottom: 0;
+        box-shadow: 24px 0 60px rgba(8, 36, 60, 0.28);
+        left: 0;
+        max-width: 320px;
+        min-height: 100vh;
+        overflow-y: auto;
+        position: fixed;
+        top: 0;
+        transform: translateX(-100%);
+        transition: transform 220ms ease;
+        width: min(88vw, 320px);
+        z-index: 150;
+    }
+
+    .dashboard-sidebar--open {
+        transform: translateX(0);
+    }
+
+    .dashboard-sidebar__close,
+    .dashboard-mobile-menu {
+        display: inline-flex;
+    }
+
+    .dashboard-sidebar__actions {
+        margin-top: 2rem;
+    }
 }
 
 @media (max-width: 560px) {
+    .app-table-toolbar,
+    .app-table-toolbar__group,
+    .app-table-pagination,
+    .app-table-pagination__actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .app-table-toolbar__group,
+    .app-table-pagination__actions {
+        width: 100%;
+    }
+
+    .app-table-toolbar__group--exports {
+        display: grid;
+        gap: 0.65rem;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        width: 100%;
+    }
+
+    .app-search-field--table {
+        max-width: none;
+    }
+
+    .app-toolbar-button,
+    .app-table-pagination__button,
+    .dashboard-notifications-trigger {
+        justify-content: center;
+        width: 100%;
+    }
+
+    .dashboard-main__topbar {
+        align-items: stretch;
+    }
+
+    .member-summary-grid,
+    .member-inline-summary-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .member-request-form button,
+    .member-upload-form button,
+    .repayment-summary-card .landing-btn--secondary {
+        justify-content: center;
+        width: 100%;
+    }
+
+    .record-action-group,
+    .loan-action-group,
+    .shareout-action-group,
+    .shareout-confirmation-actions {
+        flex-direction: column;
+    }
+
+    .record-action-group > button,
+    .loan-action-group > button,
+    .shareout-action-group > button,
+    .shareout-confirmation-actions > button {
+        justify-content: center;
+        width: 100%;
+    }
+
     .landing-about-grid,
     .landing-service-grid,
     .landing-stats-grid {
         grid-template-columns: 1fr;
+    }
+
+    .landing-topbar__inner,
+    .landing-hero,
+    .landing-section,
+    .landing-footer__inner {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .landing-hero {
+        padding-top: 1.25rem;
+    }
+
+    .landing-hero__content {
+        padding: 1.4rem;
+    }
+
+    .landing-hero__media {
+        min-height: 460px;
+    }
+
+    .landing-hero__media,
+    .landing-login-card,
+    .landing-card,
+    .landing-cycle-banner,
+    .constitution-modal,
+    .signup-modal {
+        border-radius: 22px;
+    }
+
+    .landing-login-card {
+        padding: 1.2rem;
+    }
+
+    .landing-form,
+    .landing-login-card__footer {
+        gap: 0.85rem;
+    }
+
+    .constitution-modal-backdrop,
+    .signup-modal-backdrop {
+        padding: 0.85rem;
+    }
+
+    .constitution-modal__header,
+    .constitution-modal__body,
+    .signup-modal {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .constitution-modal__header {
+        padding-top: 1.1rem;
+        padding-bottom: 1.1rem;
+    }
+
+    .constitution-modal__header h3,
+    .signup-modal__title {
+        font-size: 1.55rem;
+    }
+
+    .landing-login-modal .constitution-modal__body {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
     }
 
     .landing-hero__content h1 {
@@ -2184,5 +2611,14 @@ a:active {
     .landing-login-card__header h2,
     .landing-section__heading h2 {
         font-size: 1.9rem;
+    }
+
+    .landing-brand__title {
+        font-size: 1.3rem;
+    }
+
+    .landing-brand__subtitle {
+        font-size: 0.76rem;
+        letter-spacing: 0.1em;
     }
 }

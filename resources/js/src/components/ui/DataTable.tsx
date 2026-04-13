@@ -261,7 +261,7 @@ tbody tr:nth-child(even) td { background: #f8fbff; }
     return (
         <div>
             <div className="app-table-toolbar">
-                <div className="app-table-toolbar__group">
+                <div className="app-table-toolbar__group app-table-toolbar__group--primary">
                     <div className="text-[0.98rem] text-[var(--muted)]">
                         {totalItems} record{totalItems === 1 ? '' : 's'}{activeFilter ? ` | ${shownCount} shown` : ''}
                     </div>
@@ -278,7 +278,7 @@ tbody tr:nth-child(even) td { background: #f8fbff; }
                     </label>
                     {toolbarExtras}
                 </div>
-                <div className="app-table-toolbar__group">
+                <div className="app-table-toolbar__group app-table-toolbar__group--exports">
                     <button className="app-toolbar-button" onClick={() => void handleTableExport('csv')} title="Export CSV" type="button">
                         <CsvIcon />
                         <span>CSV</span>
@@ -339,13 +339,13 @@ tbody tr:nth-child(even) td { background: #f8fbff; }
                 </div>
             </div>
 
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                <div className="text-[0.95rem] text-[var(--muted)]">
+            <div className="app-table-pagination">
+                <div className="app-table-pagination__meta">
                     Page {currentPage} of {totalPages || 1}
                 </div>
-                <div className="flex gap-3">
+                <div className="app-table-pagination__actions">
                     <button
-                        className="rounded-full border border-[rgba(23,55,45,0.12)] bg-white px-4 py-2.5 text-[0.96rem] font-semibold shadow-[0_10px_24px_rgba(23,55,45,0.04)] disabled:cursor-not-allowed disabled:opacity-50"
+                        className="app-table-pagination__button"
                         disabled={currentPage <= 1}
                         onClick={() => onPageChange(currentPage - 1)}
                         type="button"
@@ -353,7 +353,7 @@ tbody tr:nth-child(even) td { background: #f8fbff; }
                         Previous
                     </button>
                     <button
-                        className="rounded-full border border-[rgba(23,55,45,0.12)] bg-white px-4 py-2.5 text-[0.96rem] font-semibold shadow-[0_10px_24px_rgba(23,55,45,0.04)] disabled:cursor-not-allowed disabled:opacity-50"
+                        className="app-table-pagination__button"
                         disabled={currentPage >= totalPages}
                         onClick={() => onPageChange(currentPage + 1)}
                         type="button"
