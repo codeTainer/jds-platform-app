@@ -1907,6 +1907,32 @@ a:active {
     margin: 0;
 }
 
+.support-detail-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.support-message-box {
+    background: linear-gradient(180deg, #f8fbfe, #f1f7fd);
+    border: 1px solid rgba(12, 59, 102, 0.08);
+    border-radius: 18px;
+    display: grid;
+    gap: 0.55rem;
+    padding: 1rem 1.1rem;
+}
+
+.support-message-box h4 {
+    color: #14314a;
+    font-size: 1rem;
+    margin: 0;
+}
+
+.support-message-box p {
+    color: #5f7385;
+    line-height: 1.75;
+    margin: 0;
+}
+
 .auth-gate-shell {
     min-height: 100vh;
     display: flex;

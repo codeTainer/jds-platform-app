@@ -215,6 +215,194 @@
                 ]
             }
         },
+        "/api/exco/concerns": {
+            "get": {
+                "tags": [
+                    "EXCO Concerns"
+                ],
+                "summary": "List concerns for EXCO and support staff",
+                "operationId": "e422521ca1a13efd02bd2bfb6cb341ce",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "reference_type",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "member_search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated concern queue",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "current_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Concern"
+                                            }
+                                        },
+                                        "from": {
+                                            "type": "integer",
+                                            "example": 1,
+                                            "nullable": true
+                                        },
+                                        "last_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "per_page": {
+                                            "type": "integer",
+                                            "example": 10
+                                        },
+                                        "to": {
+                                            "type": "integer",
+                                            "example": 1,
+                                            "nullable": true
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Unauthorized for support desk"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/exco/concerns/{concern}": {
+            "patch": {
+                "tags": [
+                    "EXCO Concerns"
+                ],
+                "summary": "Update the status or response note for a concern",
+                "operationId": "7197a02051deb5dc62e6dd824a6322ff",
+                "parameters": [
+                    {
+                        "name": "concern",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "type": "string",
+                                        "example": "resolved"
+                                    },
+                                    "resolution_note": {
+                                        "type": "string",
+                                        "example": "EXCO verified the record and posted the missing share purchase.",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Concern updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Concern updated successfully."
+                                        },
+                                        "concern": {
+                                            "$ref": "#/components/schemas/Concern"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Unauthorized for support desk"
+                    },
+                    "422": {
+                        "description": "Validation failed"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/exco/loans": {
             "get": {
                 "tags": [
@@ -3076,6 +3264,270 @@
                 }
             }
         },
+        "/api/member/concerns/options": {
+            "get": {
+                "tags": [
+                    "Member Concerns"
+                ],
+                "summary": "Get concern reference options for the authenticated member",
+                "operationId": "c3c65f63f7afc06f369116f53f0360f8",
+                "responses": {
+                    "200": {
+                        "description": "Concern reference options",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "reference_groups": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "type": {
+                                                        "type": "string",
+                                                        "example": "share_purchase"
+                                                    },
+                                                    "label": {
+                                                        "type": "string",
+                                                        "example": "Share Purchase Record"
+                                                    },
+                                                    "description": {
+                                                        "type": "string",
+                                                        "example": "Questions about a posted monthly share purchase record."
+                                                    },
+                                                    "requires_record": {
+                                                        "type": "boolean",
+                                                        "example": true
+                                                    },
+                                                    "options": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "properties": {
+                                                                "id": {
+                                                                    "type": "integer",
+                                                                    "example": 12
+                                                                },
+                                                                "label": {
+                                                                    "type": "string",
+                                                                    "example": "Share purchase for April 2026"
+                                                                },
+                                                                "subtitle": {
+                                                                    "type": "string",
+                                                                    "example": "JDS2026 · 10 shares · NGN 200,000.00",
+                                                                    "nullable": true
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        }
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "status_options": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string",
+                                                "example": "open"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Authenticated user is not linked to a member profile"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/member/concerns": {
+            "get": {
+                "tags": [
+                    "Member Concerns"
+                ],
+                "summary": "List concerns raised by the authenticated member",
+                "operationId": "4625ca321ceb0664bd506dfb9b12866a",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "reference_type",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated member concerns",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "current_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Concern"
+                                            }
+                                        },
+                                        "from": {
+                                            "type": "integer",
+                                            "example": 1,
+                                            "nullable": true
+                                        },
+                                        "last_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "per_page": {
+                                            "type": "integer",
+                                            "example": 10
+                                        },
+                                        "to": {
+                                            "type": "integer",
+                                            "example": 1,
+                                            "nullable": true
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Authenticated user is not linked to a member profile"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Member Concerns"
+                ],
+                "summary": "Submit a new concern as the authenticated member",
+                "operationId": "4701e5376709acba9f6cc85e56667942",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "reference_type",
+                                    "subject",
+                                    "message"
+                                ],
+                                "properties": {
+                                    "reference_type": {
+                                        "type": "string",
+                                        "example": "share_purchase"
+                                    },
+                                    "reference_id": {
+                                        "type": "integer",
+                                        "example": 12,
+                                        "nullable": true
+                                    },
+                                    "subject": {
+                                        "type": "string",
+                                        "example": "My April share is missing"
+                                    },
+                                    "message": {
+                                        "type": "string",
+                                        "example": "I uploaded the receipt and it was approved, but the purchase does not show in my official history."
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Concern submitted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Your concern has been submitted successfully."
+                                        },
+                                        "concern": {
+                                            "$ref": "#/components/schemas/Concern"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Authenticated user is not linked to a member profile"
+                    },
+                    "422": {
+                        "description": "Validation failed"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/member/loans/overview": {
             "get": {
                 "tags": [
@@ -4906,6 +5358,107 @@
                 },
                 "type": "object"
             },
+            "Concern": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "subject": {
+                        "type": "string",
+                        "example": "My April share is missing"
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "I uploaded the receipt and it was approved, but the record still does not appear in my share history."
+                    },
+                    "status": {
+                        "type": "string",
+                        "example": "open"
+                    },
+                    "raised_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-04-12T09:10:00Z",
+                        "nullable": true
+                    },
+                    "resolved_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-04-13T15:25:00Z",
+                        "nullable": true
+                    },
+                    "resolution_note": {
+                        "type": "string",
+                        "example": "EXCO confirmed the missing posting and updated your record.",
+                        "nullable": true
+                    },
+                    "reference_type": {
+                        "type": "string",
+                        "example": "share_purchase"
+                    },
+                    "reference_group_label": {
+                        "type": "string",
+                        "example": "Share Purchase Record"
+                    },
+                    "reference_label": {
+                        "type": "string",
+                        "example": "Share purchase for April 2026"
+                    },
+                    "reference_subtitle": {
+                        "type": "string",
+                        "example": "JDS2026 · 10 shares · NGN 200,000.00",
+                        "nullable": true
+                    },
+                    "action_url": {
+                        "type": "string",
+                        "example": "/dashboard/member/savings",
+                        "nullable": true
+                    },
+                    "member": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "example": 1
+                            },
+                            "member_number": {
+                                "type": "string",
+                                "example": "JDS-MEM-0001",
+                                "nullable": true
+                            },
+                            "full_name": {
+                                "type": "string",
+                                "example": "Ebube Chidi"
+                            },
+                            "email": {
+                                "type": "string",
+                                "example": "ebube93.chidi@gmail.com"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "resolver": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "example": 2
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "Secretary JDS"
+                            },
+                            "role": {
+                                "type": "string",
+                                "example": "secretary"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
             "Loan": {
                 "properties": {
                     "id": {
@@ -6589,6 +7142,10 @@
             "description": "Auth"
         },
         {
+            "name": "EXCO Concerns",
+            "description": "EXCO Concerns"
+        },
+        {
             "name": "EXCO Loans",
             "description": "EXCO Loans"
         },
@@ -6615,6 +7172,10 @@
         {
             "name": "System",
             "description": "System"
+        },
+        {
+            "name": "Member Concerns",
+            "description": "Member Concerns"
         },
         {
             "name": "Member Loans",

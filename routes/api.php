@@ -1,11 +1,13 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ExcoConcernController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ExcoMemberApplicationController;
 use App\Http\Controllers\ExcoMemberController;
 use App\Http\Controllers\ExcoMembershipCycleController;
 use App\Http\Controllers\ExcoLoanController;
+use App\Http\Controllers\MemberConcernController;
 use App\Http\Controllers\MemberLoanController;
 use App\Http\Controllers\ExcoShareoutController;
 use App\Http\Controllers\ExcoSavingsController;
@@ -43,6 +45,9 @@ Route::middleware('auth.token')->group(function () {
         Route::get('/membership-fee-submissions', [MemberSavingsController::class, 'membershipFeeSubmissions']);
         Route::post('/membership-fee-submissions', [MemberSavingsController::class, 'storeMembershipFeeSubmission']);
         Route::get('/membership-fees', [MemberSavingsController::class, 'membershipFees']);
+        Route::get('/concerns/options', [MemberConcernController::class, 'options']);
+        Route::get('/concerns', [MemberConcernController::class, 'index']);
+        Route::post('/concerns', [MemberConcernController::class, 'store']);
         Route::get('/shareouts/overview', [MemberShareoutController::class, 'overview']);
         Route::get('/shareouts', [MemberShareoutController::class, 'index']);
         Route::get('/loans/overview', [MemberLoanController::class, 'overview']);
@@ -95,6 +100,8 @@ Route::prefix('exco')->middleware('auth.token')->group(function () {
     Route::patch('/shareout-runs/{shareoutRun}/reject', [ExcoShareoutController::class, 'reject']);
     Route::patch('/shareout-runs/{shareoutRun}/execute', [ExcoShareoutController::class, 'execute']);
     Route::patch('/shareout-items/{shareoutItem}/mark-paid', [ExcoShareoutController::class, 'markItemPaid']);
+    Route::get('/concerns', [ExcoConcernController::class, 'index']);
+    Route::patch('/concerns/{concern}', [ExcoConcernController::class, 'update']);
 
     Route::get('/loans', [ExcoLoanController::class, 'index']);
     Route::patch('/loans/{loan}/approve', [ExcoLoanController::class, 'approve']);

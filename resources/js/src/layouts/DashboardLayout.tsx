@@ -78,6 +78,7 @@ export function DashboardLayout() {
               ['/dashboard/exco/savings', 'Savings Management'],
               ['/dashboard/exco/shareouts', 'Share-out Studio'],
               ['/dashboard/exco/loans', 'Loan Management'],
+              ['/dashboard/exco/support', 'Support Desk'],
               ['/dashboard/member', 'My Profile'],
               ['/dashboard/member/savings', 'My Savings'],
               ['/dashboard/member/shareouts', 'My Share-outs'],

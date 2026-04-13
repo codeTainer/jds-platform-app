@@ -146,4 +146,14 @@ class User extends Authenticatable
     {
         return $this->isTreasurer();
     }
+
+    public function canManageConcerns(): bool
+    {
+        return in_array($this->role, [
+            self::ROLE_CHAIRPERSON,
+            self::ROLE_SECRETARY,
+            self::ROLE_TREASURER,
+            self::ROLE_SUPPORT,
+        ], true);
+    }
 }

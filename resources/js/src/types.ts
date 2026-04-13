@@ -387,3 +387,34 @@ export interface NotificationListResponse {
     unread_count: number;
     notifications: AppNotification[];
 }
+
+export interface ConcernReferenceOption {
+    id: number;
+    label: string;
+    subtitle?: string | null;
+}
+
+export interface ConcernReferenceGroup {
+    type: string;
+    label: string;
+    description: string;
+    requires_record: boolean;
+    options: ConcernReferenceOption[];
+}
+
+export interface Concern {
+    id: number;
+    subject: string;
+    message: string;
+    status: 'open' | 'in_review' | 'resolved' | 'rejected';
+    raised_at?: string | null;
+    resolved_at?: string | null;
+    resolution_note?: string | null;
+    reference_type: string;
+    reference_group_label: string;
+    reference_label: string;
+    reference_subtitle?: string | null;
+    action_url?: string | null;
+    member?: Pick<Member, 'id' | 'member_number' | 'full_name' | 'email'> | null;
+    resolver?: Pick<User, 'id' | 'name' | 'role'> | null;
+}

@@ -11,6 +11,7 @@ import { useToast } from '../feedback/ToastProvider';
 import { downloadTableExport, type TableExportFormat } from '../lib/download';
 import { formatCurrency, formatDate, formatMonth } from '../lib/formatters';
 import { api } from '../lib/api';
+import { SupportSection } from '../sections/member/SupportSection';
 import type { Loan, LoanGuarantorApproval, LoanOverview, LoanRepaymentSubmission, MemberShareoutOverview, MembershipCycle, MembershipFee, MembershipFeeSubmission, PaginatedResponse, SavingsOverview, SharePaymentSubmission, SharePurchase, ShareoutItem } from '../types';
 
 function ViewIcon() {
@@ -37,7 +38,7 @@ export function MemberDashboardPage() {
             <Route element={<MemberSavingsSection />} path="savings" />
             <Route element={<MemberShareoutsSection />} path="shareouts" />
             <Route element={<MemberLoansSection />} path="loans" />
-            <Route element={<PlaceholderSection eyebrow="Support" title="Raise concerns and follow up with EXCO." description="This section will eventually connect to the concerns workflow so members can flag savings or loan history issues directly inside the platform." message="The concern-submission flow is part of the next member-facing workstream." />} path="support" />
+            <Route element={<SupportSection />} path="support" />
             <Route element={<Navigate replace to="/dashboard/member" />} path="*" />
         </Routes>
     );
