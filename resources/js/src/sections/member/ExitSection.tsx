@@ -166,6 +166,13 @@ export function MemberExitSection() {
                         <Notice>
                             <strong>How this estimate works:</strong> the current refund estimate is your total confirmed share value minus any outstanding approved or active loan balance. EXCO will review the request and confirm the final numbers before completion.
                         </Notice>
+                        {overview.summary.latest_exit_request_status && selectedRequest?.exit_policy ? (
+                            <div className="mt-4">
+                                <Notice>
+                                    <strong>{selectedRequest.exit_policy.label}:</strong> {selectedRequest.exit_policy.description}
+                                </Notice>
+                            </div>
+                        ) : null}
                         <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                             <SummaryCard label="Membership status" value={overview.member.membership_status} />
                             <SummaryCard label="Member code" value={overview.member.member_number ?? 'Not set'} />
@@ -310,6 +317,17 @@ export function MemberExitSection() {
                                     <p>{selectedRequest.notes ?? 'No processing note has been added yet.'}</p>
                                     <p>{selectedRequest.processor ? `Handled by ${selectedRequest.processor.name}` : 'Not yet assigned to an EXCO processor.'}</p>
                                 </div>
+
+                                {selectedRequest.exit_policy ? (
+                                    <div className="audit-detail__group">
+                                        <span className="audit-detail__label">Exit policy</span>
+                                        <strong>{selectedRequest.exit_policy.label}</strong>
+                                        <p>{selectedRequest.exit_policy.description}</p>
+                                        {selectedRequest.exit_policy.relevant_cycle_code ? (
+                                            <p>Relevant cycle: {selectedRequest.exit_policy.relevant_cycle_code}</p>
+                                        ) : null}
+                                    </div>
+                                ) : null}
                             </div>
                         </Panel>
                     ) : null}

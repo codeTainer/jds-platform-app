@@ -4,6 +4,12 @@ import { BrandMark } from '../components/ui/BrandMark';
 import { useAuth } from '../auth/AuthContext';
 import { useNotifications } from '../notifications/NotificationsProvider';
 
+type MenuItem = {
+    path: string;
+    label: string;
+    icon: JSX.Element;
+};
+
 function BellIcon() {
     return (
         <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
@@ -28,6 +34,109 @@ function CloseIcon() {
                 strokeLinejoin="round"
                 strokeWidth="1.8"
             />
+        </svg>
+    );
+}
+
+function OverviewIcon() {
+    return (
+        <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+            <path d="M4.5 4.5h6v6h-6zm9 0h6v10.5h-6zm-9 9h6v6h-6zm9 4.5h6V19.5h-6z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        </svg>
+    );
+}
+
+function CycleIcon() {
+    return (
+        <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+            <path d="M12 4.5v3m0 9v3m7.5-7.5h-3m-9 0h-3m10.303-5.303-2.12 2.12m-4.363 4.363-2.12 2.12m8.603 0-2.12-2.12m-4.363-4.363-2.12-2.12" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+            <circle cx="12" cy="12" r="3.5" stroke="currentColor" strokeWidth="1.8" />
+        </svg>
+    );
+}
+
+function ApplicationIcon() {
+    return (
+        <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+            <path d="M7.5 4.5h7.75L19.5 8.75V18a1.5 1.5 0 0 1-1.5 1.5h-10.5A1.5 1.5 0 0 1 6 18V6A1.5 1.5 0 0 1 7.5 4.5Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+            <path d="M15 4.5V9h4.5M9 12h6m-6 3h4.5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        </svg>
+    );
+}
+
+function MembersIcon() {
+    return (
+        <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+            <path d="M12 13.25a3.75 3.75 0 1 0-3.75-3.75A3.75 3.75 0 0 0 12 13.25Zm-6.75 6a6.75 6.75 0 0 1 13.5 0M18.5 6.75h2.25m-1.125-1.125v2.25" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        </svg>
+    );
+}
+
+function SavingsIcon() {
+    return (
+        <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+            <path d="M4.5 7.5h15v9h-15z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+            <path d="M4.5 10.5h15M9 13.5h6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        </svg>
+    );
+}
+
+function ShareoutIcon() {
+    return (
+        <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+            <path d="M12 4.5v15m0-15 4.5 4.5M12 4.5 7.5 9m9 10.5h-9" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        </svg>
+    );
+}
+
+function LoanIcon() {
+    return (
+        <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+            <path d="M6 9.5h9.5a3.5 3.5 0 1 1 0 7H14" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+            <path d="m10 6.5-4 3 4 3m4 5 4-3-4-3" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        </svg>
+    );
+}
+
+function ExitIcon() {
+    return (
+        <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+            <path d="M10.5 6H7.5A1.5 1.5 0 0 0 6 7.5v9A1.5 1.5 0 0 0 7.5 18h3m4.5-3 3-3m0 0-3-3m3 3H10.5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        </svg>
+    );
+}
+
+function ProfileIcon() {
+    return (
+        <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+            <path d="M12 12.75a4.25 4.25 0 1 0-4.25-4.25A4.25 4.25 0 0 0 12 12.75Zm-7 6.75a7 7 0 0 1 14 0" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        </svg>
+    );
+}
+
+function AuditIcon() {
+    return (
+        <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+            <path d="M7.5 4.5h9A1.5 1.5 0 0 1 18 6v12a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 18V6a1.5 1.5 0 0 1 1.5-1.5Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+            <path d="M9 9h6m-6 3h6m-6 3h3" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        </svg>
+    );
+}
+
+function ReportsIcon() {
+    return (
+        <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+            <path d="M6 18.5V12m6 6.5V6m6 12.5V9.5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+            <path d="M4.5 19.5h15" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        </svg>
+    );
+}
+
+function SupportIcon() {
+    return (
+        <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+            <path d="M8.25 9.75a3.75 3.75 0 1 1 5.52 3.3c-.93.49-1.77 1.17-1.77 2.2v.5M12 18.75h.01" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+            <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
         </svg>
     );
 }
@@ -69,32 +178,32 @@ export function DashboardLayout() {
     const navigate = useNavigate();
     const [notificationsOpen, setNotificationsOpen] = useState(false);
 
-    const menu = isExco
+    const menu: MenuItem[] = isExco
         ? [
-              ['/dashboard/exco', 'Overview'],
-              ['/dashboard/exco/cycles', 'Cycle Studio'],
-              ['/dashboard/exco/applications', 'Applications'],
-              ['/dashboard/exco/members', 'Members'],
-              ['/dashboard/exco/savings', 'Savings Management'],
-              ['/dashboard/exco/shareouts', 'Share-out Studio'],
-              ['/dashboard/exco/loans', 'Loan Management'],
-              ['/dashboard/exco/exits', 'Exit Desk'],
-              ['/dashboard/member', 'My Profile'],
-              ['/dashboard/member/savings', 'My Savings'],
-              ['/dashboard/member/shareouts', 'My Share-outs'],
-              ['/dashboard/member/loans', 'My Loans'],
-              ['/dashboard/member/exits', 'My Exit Requests'],
-              ['/dashboard/exco/audit', 'Audit Trail'],
-              ['/dashboard/exco/reports', 'Reports'],
-              ['/dashboard/exco/support', 'Support Desk'],
+              { path: '/dashboard/exco', label: 'Overview', icon: <OverviewIcon /> },
+              { path: '/dashboard/exco/cycles', label: 'Cycle Studio', icon: <CycleIcon /> },
+              { path: '/dashboard/exco/applications', label: 'Applications', icon: <ApplicationIcon /> },
+              { path: '/dashboard/exco/members', label: 'Members', icon: <MembersIcon /> },
+              { path: '/dashboard/exco/savings', label: 'Savings Management', icon: <SavingsIcon /> },
+              { path: '/dashboard/exco/shareouts', label: 'Share-out Studio', icon: <ShareoutIcon /> },
+              { path: '/dashboard/exco/loans', label: 'Loan Management', icon: <LoanIcon /> },
+              { path: '/dashboard/exco/exits', label: 'Exit Desk', icon: <ExitIcon /> },
+              { path: '/dashboard/member', label: 'My Profile', icon: <ProfileIcon /> },
+              { path: '/dashboard/member/savings', label: 'My Savings', icon: <SavingsIcon /> },
+              { path: '/dashboard/member/shareouts', label: 'My Share-outs', icon: <ShareoutIcon /> },
+              { path: '/dashboard/member/loans', label: 'My Loans', icon: <LoanIcon /> },
+              { path: '/dashboard/member/exits', label: 'My Exit Requests', icon: <ExitIcon /> },
+              { path: '/dashboard/exco/audit', label: 'Audit Trail', icon: <AuditIcon /> },
+              { path: '/dashboard/exco/reports', label: 'Reports', icon: <ReportsIcon /> },
+              { path: '/dashboard/exco/support', label: 'Support Desk', icon: <SupportIcon /> },
           ]
         : [
-              ['/dashboard/member', 'My Profile'],
-              ['/dashboard/member/savings', 'Savings'],
-              ['/dashboard/member/shareouts', 'Share-outs'],
-              ['/dashboard/member/loans', 'Loans'],
-              ['/dashboard/member/exits', 'Exit Requests'],
-              ['/dashboard/member/support', 'Support'],
+              { path: '/dashboard/member', label: 'My Profile', icon: <ProfileIcon /> },
+              { path: '/dashboard/member/savings', label: 'Savings', icon: <SavingsIcon /> },
+              { path: '/dashboard/member/shareouts', label: 'Share-outs', icon: <ShareoutIcon /> },
+              { path: '/dashboard/member/loans', label: 'Loans', icon: <LoanIcon /> },
+              { path: '/dashboard/member/exits', label: 'Exit Requests', icon: <ExitIcon /> },
+              { path: '/dashboard/member/support', label: 'Support', icon: <SupportIcon /> },
           ];
 
     async function openNotifications() {
@@ -125,14 +234,15 @@ export function DashboardLayout() {
                     </div>
 
                     <nav className="dashboard-sidebar__nav">
-                        {menu.map(([path, label]) => (
+                        {menu.map(({ path, label, icon }) => (
                             <NavLink
                                 key={path}
                                 className={({ isActive }) => isActive ? 'dashboard-nav-link dashboard-nav-link-active' : 'dashboard-nav-link dashboard-nav-link-idle'}
                                 end={path === '/dashboard/exco' || path === '/dashboard/member'}
                                 to={path}
                             >
-                                {label}
+                                <span className="dashboard-nav-link__icon">{icon}</span>
+                                <span>{label}</span>
                             </NavLink>
                         ))}
                     </nav>

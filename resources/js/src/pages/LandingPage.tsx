@@ -497,7 +497,7 @@ export function LandingPage() {
                                     <Notice tone="danger">{error}</Notice>
                                 ) : null}
                                 {idleNotice ? (
-                                    <Notice>{idleNotice}</Notice>
+                                    <Notice tone="danger">{idleNotice}</Notice>
                                 ) : null}
                                 <button
                                     className="landing-btn landing-btn--primary landing-btn--block"

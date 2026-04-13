@@ -7,6 +7,7 @@ use App\Models\Member;
 use App\Models\MemberExitRequest;
 use App\Models\SharePurchase;
 use App\Support\AuditLogger;
+use App\Support\ExitPolicyResolver;
 use App\Support\ProcessNotifier;
 use Illuminate\Http\Request;
 
@@ -14,7 +15,8 @@ class MemberExitRequestController extends Controller
 {
     public function __construct(
         private readonly ProcessNotifier $processNotifier,
-        private readonly AuditLogger $auditLogger
+        private readonly AuditLogger $auditLogger,
+        private readonly ExitPolicyResolver $exitPolicyResolver
     ) {
     }
 
@@ -154,6 +156,7 @@ class MemberExitRequestController extends Controller
     {
         return [
             ...$exitRequest->toArray(),
+            'exit_policy' => $this->exitPolicyResolver->resolveForExitDate($exitRequest->requested_exit_on->toDateString()),
             'processor' => $exitRequest->processedBy ? [
                 'id' => $exitRequest->processedBy->id,
                 'name' => $exitRequest->processedBy->name,

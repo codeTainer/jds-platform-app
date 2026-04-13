@@ -479,6 +479,14 @@ export interface MemberExitRequest {
     current_total_saved_value?: number | string | null;
     current_outstanding_loan_balance?: number | string | null;
     current_estimated_refund_amount?: number | string | null;
+    exit_policy?: {
+        mode: 'immediate_settlement' | 'shareout_first';
+        label: string;
+        description: string;
+        relevant_cycle_id?: number | null;
+        relevant_cycle_code?: string | null;
+        relevant_cycle_end_on?: string | null;
+    } | null;
 }
 
 export interface MemberExitOverview {

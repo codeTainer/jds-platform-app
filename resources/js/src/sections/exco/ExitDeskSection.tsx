@@ -274,6 +274,17 @@ export function ExitDeskSection() {
                                     <p>{selectedRequest.notes ?? 'No processing note has been added yet.'}</p>
                                     <p>{selectedRequest.processor ? `Last handled by ${selectedRequest.processor.name}` : 'No EXCO processor has updated this request yet.'}</p>
                                 </div>
+
+                                {selectedRequest.exit_policy ? (
+                                    <div className="audit-detail__group">
+                                        <span className="audit-detail__label">Exit policy</span>
+                                        <strong>{selectedRequest.exit_policy.label}</strong>
+                                        <p>{selectedRequest.exit_policy.description}</p>
+                                        {selectedRequest.exit_policy.relevant_cycle_code ? (
+                                            <p>Relevant cycle: {selectedRequest.exit_policy.relevant_cycle_code}</p>
+                                        ) : null}
+                                    </div>
+                                ) : null}
                             </div>
                         ) : (
                             <Notice>Select an exit request from the queue to review it here.</Notice>
@@ -283,6 +294,12 @@ export function ExitDeskSection() {
                     <Panel eyebrow="Update request" title="Move the request through the workflow">
                         {selectedRequest ? (
                             <form className="grid gap-4" onSubmit={(event) => void updateExitRequest(event)}>
+                                {selectedRequest.exit_policy?.mode === 'shareout_first' ? (
+                                    <Notice>
+                                        <strong>Share-out first:</strong> this exit falls after a cycle has already closed, so the member should participate in that cycle's share-out before EXCO approves or completes the exit.
+                                    </Notice>
+                                ) : null}
+
                                 {closedRequest ? (
                                     <Notice tone="warning">This exit request is already closed and can no longer be changed.</Notice>
                                 ) : null}

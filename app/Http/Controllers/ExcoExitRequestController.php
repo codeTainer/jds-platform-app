@@ -7,6 +7,7 @@ use App\Models\Member;
 use App\Models\MemberExitRequest;
 use App\Models\SharePurchase;
 use App\Support\AuditLogger;
+use App\Support\ExitPolicyResolver;
 use App\Support\ProcessNotifier;
 use Illuminate\Http\Request;
 
@@ -14,7 +15,8 @@ class ExcoExitRequestController extends Controller
 {
     public function __construct(
         private readonly ProcessNotifier $processNotifier,
-        private readonly AuditLogger $auditLogger
+        private readonly AuditLogger $auditLogger,
+        private readonly ExitPolicyResolver $exitPolicyResolver
     ) {
     }
 
@@ -55,6 +57,7 @@ class ExcoExitRequestController extends Controller
                     'current_total_saved_value' => number_format($summary['total_saved_value'], 2, '.', ''),
                     'current_outstanding_loan_balance' => number_format($summary['outstanding_loan_balance'], 2, '.', ''),
                     'current_estimated_refund_amount' => number_format($summary['estimated_refund_amount'], 2, '.', ''),
+                    'exit_policy' => $this->exitPolicyResolver->resolveForExitDate($exitRequest->requested_exit_on->toDateString()),
                     'processor' => $exitRequest->processedBy ? [
                         'id' => $exitRequest->processedBy->id,
                         'name' => $exitRequest->processedBy->name,
@@ -90,6 +93,13 @@ class ExcoExitRequestController extends Controller
         if (in_array($data['status'], [MemberExitRequest::STATUS_REJECTED, MemberExitRequest::STATUS_COMPLETED], true) && blank($data['notes'] ?? null)) {
             return response()->json([
                 'message' => 'Add a processing note before rejecting or completing an exit request.',
+            ], 422);
+        }
+
+        if (in_array($data['status'], [MemberExitRequest::STATUS_APPROVED, MemberExitRequest::STATUS_COMPLETED], true)
+            && ! $this->exitPolicyResolver->canApproveExitRequest($memberExitRequest)) {
+            return response()->json([
+                'message' => $this->exitPolicyResolver->approvalBlockMessage($memberExitRequest),
             ], 422);
         }
 
@@ -162,6 +172,7 @@ class ExcoExitRequestController extends Controller
                 'current_total_saved_value' => number_format($financialSummary['total_saved_value'], 2, '.', ''),
                 'current_outstanding_loan_balance' => number_format($financialSummary['outstanding_loan_balance'], 2, '.', ''),
                 'current_estimated_refund_amount' => number_format($financialSummary['estimated_refund_amount'], 2, '.', ''),
+                'exit_policy' => $this->exitPolicyResolver->resolveForExitDate($memberExitRequest->requested_exit_on->toDateString()),
                 'processor' => $memberExitRequest->processedBy ? [
                     'id' => $memberExitRequest->processedBy->id,
                     'name' => $memberExitRequest->processedBy->name,

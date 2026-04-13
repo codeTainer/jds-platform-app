@@ -8,6 +8,11 @@ use App\Models\SharePurchase;
 
 class ShareoutCalculator
 {
+    public function __construct(
+        private readonly ExitPolicyResolver $exitPolicyResolver
+    ) {
+    }
+
     public function build(MembershipCycle $cycle, float $totalProfit, float $adminFeeRate): array
     {
         $shareRows = SharePurchase::query()
@@ -26,7 +31,9 @@ class ShareoutCalculator
                     'total_saved' => round((float) $purchases->sum('total_amount'), 2),
                 ];
             })
-            ->filter(fn ($row) => $row['member'] !== null && $row['total_shares'] > 0)
+            ->filter(fn ($row) => $row['member'] !== null
+                && $row['total_shares'] > 0
+                && ! $this->exitPolicyResolver->shouldExcludeMemberFromCycleShareout($row['member'], $cycle))
             ->values();
 
         $totalSavedAll = round((float) $shareRows->sum('total_saved'), 2);
