@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
+import { AppSelect } from '../../components/ui/AppSelect';
 import { DataTable } from '../../components/ui/DataTable';
 import { Notice } from '../../components/ui/Notice';
 import { PageHeader } from '../../components/ui/PageHeader';
@@ -44,6 +45,7 @@ export function MemberExitSection() {
     const [selectedRequestId, setSelectedRequestId] = useState<number | null>(null);
     const [statusFilter, setStatusFilter] = useState('');
     const [page, setPage] = useState(1);
+    const [perPage, setPerPage] = useState(10);
     const [submitting, setSubmitting] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -59,17 +61,18 @@ export function MemberExitSection() {
         setOverview(data);
     };
 
-    const loadRequests = async (nextPage = page) => {
+    const loadRequests = async (nextPage = page, nextPerPage = perPage) => {
         const { data } = await api.get<PaginatedResponse<MemberExitRequest>>('/api/member/exit-requests', {
             params: {
                 page: nextPage,
-                per_page: 10,
+                per_page: nextPerPage,
                 status: statusFilter || undefined,
             },
         });
 
         setRequests(data);
         setPage(data.current_page);
+        setPerPage(data.per_page);
         setSelectedRequestId((current) => {
             if (current && data.data.some((request) => request.id === current)) {
                 return current;
@@ -89,11 +92,11 @@ export function MemberExitSection() {
 
     useEffect(() => {
         const timeout = window.setTimeout(() => {
-            void loadRequests(1);
+            void loadRequests(1, perPage);
         }, 250);
 
         return () => window.clearTimeout(timeout);
-    }, [statusFilter]);
+    }, [statusFilter, perPage]);
 
     async function submitExitRequest(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -273,21 +276,26 @@ export function MemberExitSection() {
                                     },
                                 ]}
                                 currentPage={requests.current_page}
+                                currentPerPage={perPage}
                                 emptyMessage="You have not submitted any exit requests yet."
                                 exportFilename="my-exit-requests.csv"
                                 filterPlaceholder="Filter exit requests"
                                 onPageChange={(nextPage) => void loadRequests(nextPage)}
+                                onPerPageChange={(value) => {
+                                    setPage(1);
+                                    setPerPage(value);
+                                }}
                                 rowKey={(request) => request.id}
                                 rows={requests.data}
                                 toolbarExtras={(
-                                    <select className="app-filter-select" onChange={(event) => setStatusFilter(event.target.value)} value={statusFilter}>
+                                    <AppSelect className="app-filter-select" onChange={(event) => setStatusFilter(event.target.value)} value={statusFilter}>
                                         <option value="">All statuses</option>
                                         <option value="pending">Pending</option>
                                         <option value="in_review">In review</option>
                                         <option value="approved">Approved</option>
                                         <option value="rejected">Rejected</option>
                                         <option value="completed">Completed</option>
-                                    </select>
+                                    </AppSelect>
                                 )}
                                 totalItems={requests.total}
                                 totalPages={requests.last_page}

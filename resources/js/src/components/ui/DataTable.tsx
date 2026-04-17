@@ -1,4 +1,5 @@
 import { isValidElement, useMemo, useState, type ReactNode } from 'react';
+import { AppSelect } from './AppSelect';
 import { deriveExportTitle, downloadTableExport, type TableExportFormat } from '../../lib/download';
 
 export interface DataTableColumn<T> {
@@ -26,6 +27,9 @@ interface DataTableProps<T> {
     filterValue?: string;
     onFilterChange?: (value: string) => void;
     toolbarExtras?: ReactNode;
+    currentPerPage?: number;
+    perPageOptions?: number[];
+    onPerPageChange?: (value: number) => void;
 }
 
 function extractNodeText(node: ReactNode): string {
@@ -120,6 +124,40 @@ function PrintIcon() {
     );
 }
 
+function FirstPageIcon() {
+    return (
+        <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+            <path d="M6 5.5v13" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" />
+            <path d="m17 7-5 5 5 5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        </svg>
+    );
+}
+
+function PreviousPageIcon() {
+    return (
+        <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+            <path d="m15.5 7-5 5 5 5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        </svg>
+    );
+}
+
+function NextPageIcon() {
+    return (
+        <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+            <path d="m8.5 7 5 5-5 5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        </svg>
+    );
+}
+
+function LastPageIcon() {
+    return (
+        <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+            <path d="M18 5.5v13" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" />
+            <path d="m7 7 5 5-5 5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        </svg>
+    );
+}
+
 export function DataTable<T>({
     columns,
     rows,
@@ -136,6 +174,9 @@ export function DataTable<T>({
     filterValue,
     onFilterChange,
     toolbarExtras,
+    currentPerPage,
+    perPageOptions = [10, 20, 50],
+    onPerPageChange,
 }: DataTableProps<T>) {
     const [internalFilter, setInternalFilter] = useState('');
     const activeFilter = filterValue ?? internalFilter;
@@ -169,6 +210,31 @@ export function DataTable<T>({
     }, [activeFilter, columns, rows]);
 
     const shownCount = filteredRows.length;
+    const safeTotalPages = Math.max(totalPages || 1, 1);
+
+    const paginationPages = useMemo(() => {
+        if (safeTotalPages <= 7) {
+            return Array.from({ length: safeTotalPages }, (_, index) => index + 1);
+        }
+
+        const candidates = new Set<number>([1, safeTotalPages, currentPage - 1, currentPage, currentPage + 1]);
+
+        if (currentPage <= 3) {
+            candidates.add(2);
+            candidates.add(3);
+            candidates.add(4);
+        }
+
+        if (currentPage >= safeTotalPages - 2) {
+            candidates.add(safeTotalPages - 1);
+            candidates.add(safeTotalPages - 2);
+            candidates.add(safeTotalPages - 3);
+        }
+
+        return Array.from(candidates)
+            .filter((page) => page >= 1 && page <= safeTotalPages)
+            .sort((left, right) => left - right);
+    }, [currentPage, safeTotalPages]);
 
     const handleFilterChange = (value: string) => {
         if (onFilterChange) {
@@ -341,24 +407,78 @@ tbody tr:nth-child(even) td { background: #f8fbff; }
 
             <div className="app-table-pagination">
                 <div className="app-table-pagination__meta">
-                    Page {currentPage} of {totalPages || 1}
+                    <span>Page {currentPage} of {safeTotalPages}</span>
+                    {typeof currentPerPage === 'number' && onPerPageChange ? (
+                        <label className="app-table-pagination__page-size">
+                            <span>Show</span>
+                            <AppSelect
+                                className="app-table-pagination__select"
+                                onChange={(event) => onPerPageChange(Number(event.target.value))}
+                                value={currentPerPage}
+                            >
+                                {perPageOptions.map((option) => (
+                                    <option key={option} value={option}>{option}</option>
+                                ))}
+                            </AppSelect>
+                        </label>
+                    ) : null}
                 </div>
                 <div className="app-table-pagination__actions">
                     <button
-                        className="app-table-pagination__button"
+                        aria-label="Go to first page"
+                        className="app-table-pagination__button app-table-pagination__button--icon"
+                        disabled={currentPage <= 1}
+                        onClick={() => onPageChange(1)}
+                        type="button"
+                    >
+                        <FirstPageIcon />
+                    </button>
+                    <button
+                        aria-label="Go to previous page"
+                        className="app-table-pagination__button app-table-pagination__button--icon"
                         disabled={currentPage <= 1}
                         onClick={() => onPageChange(currentPage - 1)}
                         type="button"
                     >
-                        Previous
+                        <PreviousPageIcon />
                     </button>
+                    <div className="app-table-pagination__numbers">
+                        {paginationPages.map((page, index) => {
+                            const previousPage = paginationPages[index - 1];
+                            const showEllipsis = previousPage && page - previousPage > 1;
+
+                            return (
+                                <div className="app-table-pagination__number-group" key={page}>
+                                    {showEllipsis ? <span className="app-table-pagination__ellipsis">…</span> : null}
+                                    <button
+                                        aria-current={page === currentPage ? 'page' : undefined}
+                                        className={`app-table-pagination__button${page === currentPage ? ' app-table-pagination__button--active' : ''}`}
+                                        onClick={() => onPageChange(page)}
+                                        type="button"
+                                    >
+                                        {page}
+                                    </button>
+                                </div>
+                            );
+                        })}
+                    </div>
                     <button
-                        className="app-table-pagination__button"
-                        disabled={currentPage >= totalPages}
+                        aria-label="Go to next page"
+                        className="app-table-pagination__button app-table-pagination__button--icon"
+                        disabled={currentPage >= safeTotalPages}
                         onClick={() => onPageChange(currentPage + 1)}
                         type="button"
                     >
-                        Next
+                        <NextPageIcon />
+                    </button>
+                    <button
+                        aria-label="Go to last page"
+                        className="app-table-pagination__button app-table-pagination__button--icon"
+                        disabled={currentPage >= safeTotalPages}
+                        onClick={() => onPageChange(safeTotalPages)}
+                        type="button"
+                    >
+                        <LastPageIcon />
                     </button>
                 </div>
             </div>

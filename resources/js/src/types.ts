@@ -388,9 +388,19 @@ export interface AppNotification {
     created_at?: string | null;
 }
 
+export interface NotificationPagination {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    from: number | null;
+    to: number | null;
+}
+
 export interface NotificationListResponse {
     unread_count: number;
     notifications: AppNotification[];
+    pagination?: NotificationPagination;
 }
 
 export interface ConcernReferenceOption {

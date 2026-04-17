@@ -31,7 +31,12 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
         setLoading(true);
 
         try {
-            const { data } = await api.get<NotificationListResponse>('/api/notifications');
+            const { data } = await api.get<NotificationListResponse>('/api/notifications', {
+                params: {
+                    unread_only: true,
+                    per_page: 20,
+                },
+            });
             setNotifications(data.notifications);
             setUnreadCount(data.unread_count);
         } finally {
@@ -47,21 +52,13 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
         }
 
         await api.patch(`/api/notifications/${notificationId}/read`);
-        setNotifications((current) => current.map((notification) => (
-            notification.id === notificationId
-                ? { ...notification, read_at: notification.read_at ?? new Date().toISOString() }
-                : notification
-        )));
+        setNotifications((current) => current.filter((notification) => notification.id !== notificationId));
         setUnreadCount((current) => Math.max(current - 1, 0));
     }
 
     async function markAllRead() {
         await api.post('/api/notifications/mark-all-read');
-        const nowIso = new Date().toISOString();
-        setNotifications((current) => current.map((notification) => ({
-            ...notification,
-            read_at: notification.read_at ?? nowIso,
-        })));
+        setNotifications([]);
         setUnreadCount(0);
     }
 

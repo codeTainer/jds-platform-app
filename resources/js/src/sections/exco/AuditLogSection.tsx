@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { AppSelect } from '../../components/ui/AppSelect';
 import { DataTable } from '../../components/ui/DataTable';
 import { Notice } from '../../components/ui/Notice';
 import { PageHeader } from '../../components/ui/PageHeader';
@@ -44,13 +45,14 @@ export function AuditLogSection() {
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
     const [page, setPage] = useState(1);
+    const [perPage, setPerPage] = useState(10);
     const [error, setError] = useState('');
 
-    async function loadAuditLogs(nextPage = page) {
+    async function loadAuditLogs(nextPage = page, nextPerPage = perPage) {
         const { data } = await api.get<PaginatedResponse<AuditLogEntry>>('/api/exco/audit-logs', {
             params: {
                 page: nextPage,
-                per_page: 10,
+                per_page: nextPerPage,
                 search: search || undefined,
                 module: moduleFilter || undefined,
                 date_from: dateFrom || undefined,
@@ -61,13 +63,8 @@ export function AuditLogSection() {
         setError('');
         setRows(data);
         setPage(data.current_page);
-        setSelectedEntry((current) => {
-            if (!current) {
-                return data.data[0] ?? null;
-            }
-
-            return data.data.find((entry) => entry.id === current.id) ?? data.data[0] ?? null;
-        });
+        setPerPage(data.per_page);
+        setSelectedEntry((current) => current ? data.data.find((entry) => entry.id === current.id) ?? current : null);
     }
 
     useEffect(() => {
@@ -78,13 +75,13 @@ export function AuditLogSection() {
 
     useEffect(() => {
         const timeout = window.setTimeout(() => {
-            void loadAuditLogs(1).catch((requestError: any) => {
+            void loadAuditLogs(1, perPage).catch((requestError: any) => {
                 setError(requestError.response?.data?.message ?? 'Unable to load audit logs right now.');
             });
         }, 300);
 
         return () => window.clearTimeout(timeout);
-    }, [search, moduleFilter, dateFrom, dateTo]);
+    }, [dateFrom, dateTo, moduleFilter, perPage, search]);
 
     const selectedMetadataEntries = useMemo(
         () => Object.entries(selectedEntry?.metadata ?? {}),
@@ -116,11 +113,11 @@ export function AuditLogSection() {
 
                         <label className="app-field">
                             <span className="app-field__label">Module</span>
-                            <select className="app-field__control" onChange={(event) => setModuleFilter(event.target.value)} value={moduleFilter}>
+                            <AppSelect className="app-field__control" onChange={(event) => setModuleFilter(event.target.value)} value={moduleFilter}>
                                 {moduleOptions.map((option) => (
                                     <option key={option.value || 'all'} value={option.value}>{option.label}</option>
                                 ))}
-                            </select>
+                            </AppSelect>
                         </label>
 
                         <label className="app-field">
@@ -136,7 +133,7 @@ export function AuditLogSection() {
                 </Panel>
             </div>
 
-            <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.9fr)]">
+            <div className="mt-6">
                 <Panel eyebrow="Audit register" title="Recorded activity">
                     {rows ? (
                         <DataTable
@@ -166,10 +163,15 @@ export function AuditLogSection() {
                                 },
                             ]}
                             currentPage={rows.current_page}
+                            currentPerPage={perPage}
                             emptyMessage="No audit entries have been recorded yet."
                             exportFilename="audit-log.csv"
                             filterPlaceholder="Filter this page"
                             onPageChange={(nextPage) => void loadAuditLogs(nextPage)}
+                            onPerPageChange={(value) => {
+                                setPage(1);
+                                setPerPage(value);
+                            }}
                             rowKey={(entry) => entry.id}
                             rows={rows.data}
                             totalItems={rows.total}
@@ -177,48 +179,69 @@ export function AuditLogSection() {
                         />
                     ) : <Notice>Loading audit entries...</Notice>}
                 </Panel>
+            </div>
 
-                <Panel eyebrow="Entry detail" title={selectedEntry ? 'Review the selected audit entry' : 'Select an audit entry'}>
-                    {selectedEntry ? (
-                        <div className="audit-detail">
-                            <div className="audit-detail__group">
-                                <span className="audit-detail__label">Actor</span>
-                                <strong>{selectedEntry.actor ? selectedEntry.actor.name : 'System'}</strong>
-                                <p>{selectedEntry.actor ? `${selectedEntry.actor.email} - ${selectedEntry.actor.role}` : 'No actor account was attached to this event.'}</p>
+            {selectedEntry ? (
+                <div className="constitution-modal-backdrop" onClick={() => setSelectedEntry(null)} role="presentation">
+                    <div
+                        aria-modal="true"
+                        className="constitution-modal audit-entry-modal"
+                        onClick={(event) => event.stopPropagation()}
+                        role="dialog"
+                    >
+                        <div className="constitution-modal__header">
+                            <div>
+                                <p className="constitution-modal__eyebrow">Audit entry</p>
+                                <h3>Review the selected activity</h3>
                             </div>
+                            <button
+                                aria-label="Close audit entry"
+                                className="constitution-modal__close"
+                                onClick={() => setSelectedEntry(null)}
+                                type="button"
+                            >
+                                &times;
+                            </button>
+                        </div>
+                        <div className="constitution-modal__body">
+                            <div className="audit-detail">
+                                <div className="audit-detail__group">
+                                    <span className="audit-detail__label">Actor</span>
+                                    <strong>{selectedEntry.actor ? selectedEntry.actor.name : 'System'}</strong>
+                                    <p>{selectedEntry.actor ? `${selectedEntry.actor.email} - ${selectedEntry.actor.role}` : 'No actor account was attached to this event.'}</p>
+                                </div>
 
-                            <div className="audit-detail__group">
-                                <span className="audit-detail__label">Action</span>
-                                <strong>{selectedEntry.module_label} - {selectedEntry.action_label}</strong>
-                                <p>{selectedEntry.description ?? 'No description recorded.'}</p>
-                            </div>
+                                <div className="audit-detail__group">
+                                    <span className="audit-detail__label">Action</span>
+                                    <strong>{selectedEntry.module_label} - {selectedEntry.action_label}</strong>
+                                    <p>{selectedEntry.description ?? 'No description recorded.'}</p>
+                                </div>
 
-                            <div className="audit-detail__group">
-                                <span className="audit-detail__label">Occurred at</span>
-                                <strong>{formatDate(selectedEntry.occurred_at)}</strong>
-                            </div>
+                                <div className="audit-detail__group">
+                                    <span className="audit-detail__label">Occurred at</span>
+                                    <strong>{formatDate(selectedEntry.occurred_at)}</strong>
+                                </div>
 
-                            <div className="audit-detail__group">
-                                <span className="audit-detail__label">Metadata</span>
-                                {selectedMetadataEntries.length ? (
-                                    <div className="audit-detail__metadata">
-                                        {selectedMetadataEntries.map(([key, value]) => (
-                                            <div className="audit-detail__metadata-row" key={key}>
-                                                <span>{key.replaceAll('_', ' ')}</span>
-                                                <strong>{formatMetadataValue(value)}</strong>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <p>No extra metadata was recorded for this event.</p>
-                                )}
+                                <div className="audit-detail__group">
+                                    <span className="audit-detail__label">Metadata</span>
+                                    {selectedMetadataEntries.length ? (
+                                        <div className="audit-detail__metadata">
+                                            {selectedMetadataEntries.map(([key, value]) => (
+                                                <div className="audit-detail__metadata-row" key={key}>
+                                                    <span>{key.replaceAll('_', ' ')}</span>
+                                                    <strong>{formatMetadataValue(value)}</strong>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p>No extra metadata was recorded for this event.</p>
+                                    )}
+                                </div>
                             </div>
                         </div>
-                    ) : (
-                        <Notice>Select an audit entry from the register to see its details.</Notice>
-                    )}
-                </Panel>
-            </div>
+                    </div>
+                </div>
+            ) : null}
         </div>
     );
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
+import { AppSelect } from '../../components/ui/AppSelect';
 import { DataTable } from '../../components/ui/DataTable';
 import { Notice } from '../../components/ui/Notice';
 import { PageHeader } from '../../components/ui/PageHeader';
@@ -91,6 +92,8 @@ export function ShareoutStudioSection() {
     const [runPendingDelete, setRunPendingDelete] = useState<ShareoutRun | null>(null);
     const [runsPage, setRunsPage] = useState(1);
     const [itemsPage, setItemsPage] = useState(1);
+    const [runsPerPage, setRunsPerPage] = useState(10);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
     const [itemStatusFilter, setItemStatusFilter] = useState('');
     const [form, setForm] = useState<ShareoutForm>(initialForm);
     const canCalculate = user?.role === 'secretary' || user?.role === 'treasurer';
@@ -135,19 +138,20 @@ export function ShareoutStudioSection() {
         }
     };
 
-    const loadRuns = async (page = runsPage) => {
+    const loadRuns = async (page = runsPage, perPage = runsPerPage) => {
         const { data } = await api.get<PaginatedResponse<ShareoutRun>>('/api/exco/shareout-runs', {
-            params: { page, per_page: 10 },
+            params: { page, per_page: perPage },
         });
         setRuns(data);
         setRunsPage(data.current_page);
+        setRunsPerPage(data.per_page);
     };
 
-    const loadRunDetail = async (runId: number, page = itemsPage, status = itemStatusFilter) => {
+    const loadRunDetail = async (runId: number, page = itemsPage, status = itemStatusFilter, perPage = itemsPerPage) => {
         const [{ data: detail }, { data: paginatedItems }] = await Promise.all([
             api.get<{ run: ShareoutRun; summary: ShareoutSummary; profit_breakdown: ShareoutProfitBreakdown | null; formula: ShareoutFormula }>(`/api/exco/shareout-runs/${runId}`),
             api.get<PaginatedResponse<ShareoutItem>>(`/api/exco/shareout-runs/${runId}/items`, {
-                params: { page, per_page: 10, status: status || undefined },
+                params: { page, per_page: perPage, status: status || undefined },
             }),
         ]);
 
@@ -157,6 +161,7 @@ export function ShareoutStudioSection() {
         setSelectedRunFormula(detail.formula);
         setItems(paginatedItems);
         setItemsPage(paginatedItems.current_page);
+        setItemsPerPage(paginatedItems.per_page);
     };
 
     useEffect(() => {
@@ -187,11 +192,11 @@ export function ShareoutStudioSection() {
         }
 
         const timeout = window.setTimeout(() => {
-            void loadRunDetail(selectedRun.id, 1, itemStatusFilter);
+            void loadRunDetail(selectedRun.id, 1, itemStatusFilter, itemsPerPage);
         }, 250);
 
         return () => window.clearTimeout(timeout);
-    }, [selectedRun?.id, itemStatusFilter]);
+    }, [selectedRun?.id, itemStatusFilter, itemsPerPage]);
 
     async function generateRun(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -333,14 +338,14 @@ export function ShareoutStudioSection() {
                         <form className="grid gap-4" onSubmit={(event) => void generateRun(event)}>
                             <label className="app-field">
                                 <span className="app-field__label">Cycle</span>
-                                <select className="app-field__control" onChange={(event) => {
+                                <AppSelect className="app-field__control" onChange={(event) => {
                                     const value = event.target.value;
                                     setForm((current) => ({ ...current, membership_cycle_id: value }));
                                     void loadProfitPreview(value);
                                 }} required value={form.membership_cycle_id}>
                                     <option value="">Select cycle</option>
                                     {cycles.map((cycle) => <option key={cycle.id} value={cycle.id}>{cycle.name}</option>)}
-                                </select>
+                                </AppSelect>
                             </label>
                             <label className="app-field">
                                 <span className="app-field__label">Total Annual Profit</span>
@@ -426,10 +431,14 @@ export function ShareoutStudioSection() {
                                 },
                             ]}
                             currentPage={runs.current_page}
+                            currentPerPage={runsPerPage}
                             emptyMessage="No share-out runs have been generated yet."
                             exportFilename="shareout-runs.csv"
                             filterPlaceholder="Filter share-out runs"
                             onPageChange={(page) => void loadRuns(page)}
+                            onPerPageChange={(value) => {
+                                void loadRuns(1, value);
+                            }}
                             rowKey={(run) => run.id}
                             rows={runs.data}
                             totalItems={runs.total}
@@ -502,18 +511,23 @@ export function ShareoutStudioSection() {
                                     },
                                 ]}
                                 currentPage={items.current_page}
+                                currentPerPage={itemsPerPage}
                                 emptyMessage="No share-out items have been calculated for this run."
                                 exportFilename="shareout-items.csv"
                                 filterPlaceholder="Filter share-out items"
                                 onPageChange={(page) => void loadRunDetail(selectedRun.id, page, itemStatusFilter)}
+                                onPerPageChange={(value) => {
+                                    setItemsPage(1);
+                                    setItemsPerPage(value);
+                                }}
                                 rowKey={(item) => item.id}
                                 rows={items.data}
                                 toolbarExtras={(
-                                    <select className="app-filter-select" onChange={(event) => setItemStatusFilter(event.target.value)} value={itemStatusFilter}>
+                                    <AppSelect className="app-filter-select" onChange={(event) => setItemStatusFilter(event.target.value)} value={itemStatusFilter}>
                                         <option value="">All statuses</option>
                                         <option value="pending">Pending</option>
                                         <option value="paid">Paid</option>
-                                    </select>
+                                    </AppSelect>
                                 )}
                                 totalItems={items.total}
                                 totalPages={items.last_page}

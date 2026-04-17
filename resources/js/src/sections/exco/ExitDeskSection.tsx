@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
+import { AppSelect } from '../../components/ui/AppSelect';
 import { DataTable } from '../../components/ui/DataTable';
 import { Notice } from '../../components/ui/Notice';
 import { PageHeader } from '../../components/ui/PageHeader';
@@ -44,6 +45,7 @@ export function ExitDeskSection() {
     const [requests, setRequests] = useState<PaginatedResponse<MemberExitRequest> | null>(null);
     const [selectedRequestId, setSelectedRequestId] = useState<number | null>(null);
     const [page, setPage] = useState(1);
+    const [perPage, setPerPage] = useState(10);
     const [statusFilter, setStatusFilter] = useState('');
     const [memberSearch, setMemberSearch] = useState('');
     const [submitting, setSubmitting] = useState(false);
@@ -70,11 +72,11 @@ export function ExitDeskSection() {
         };
     }, [requests]);
 
-    async function loadRequests(nextPage = page) {
+    async function loadRequests(nextPage = page, nextPerPage = perPage) {
         const { data } = await api.get<PaginatedResponse<MemberExitRequest>>('/api/exco/exit-requests', {
             params: {
                 page: nextPage,
-                per_page: 10,
+                per_page: nextPerPage,
                 status: statusFilter || undefined,
                 member_search: memberSearch || undefined,
             },
@@ -83,6 +85,7 @@ export function ExitDeskSection() {
         setError('');
         setRequests(data);
         setPage(data.current_page);
+        setPerPage(data.per_page);
         setSelectedRequestId((current) => {
             if (current && data.data.some((request) => request.id === current)) {
                 return current;
@@ -102,13 +105,13 @@ export function ExitDeskSection() {
 
     useEffect(() => {
         const timeout = window.setTimeout(() => {
-            void loadRequests(1).catch((requestError: any) => {
+            void loadRequests(1, perPage).catch((requestError: any) => {
                 setError(requestError.response?.data?.message ?? 'Unable to load the exit desk right now.');
             });
         }, 250);
 
         return () => window.clearTimeout(timeout);
-    }, [statusFilter, memberSearch]);
+    }, [statusFilter, memberSearch, perPage]);
 
     useEffect(() => {
         if (!selectedRequest) {
@@ -212,10 +215,15 @@ export function ExitDeskSection() {
                                     },
                                 ]}
                                 currentPage={requests.current_page}
+                                currentPerPage={perPage}
                                 emptyMessage="No exit requests have been submitted yet."
                                 exportFilename="member-exit-requests.csv"
                                 filterPlaceholder="Filter this page"
                                 onPageChange={(nextPage) => void loadRequests(nextPage)}
+                                onPerPageChange={(value) => {
+                                    setPage(1);
+                                    setPerPage(value);
+                                }}
                                 rowKey={(request) => request.id}
                                 rows={requests.data}
                                 toolbarExtras={(
@@ -226,14 +234,14 @@ export function ExitDeskSection() {
                                             placeholder="Search member"
                                             value={memberSearch}
                                         />
-                                        <select className="app-filter-select" onChange={(event) => setStatusFilter(event.target.value)} value={statusFilter}>
+                                        <AppSelect className="app-filter-select" onChange={(event) => setStatusFilter(event.target.value)} value={statusFilter}>
                                             <option value="">All statuses</option>
                                             <option value="pending">Pending</option>
                                             <option value="in_review">In review</option>
                                             <option value="approved">Approved</option>
                                             <option value="rejected">Rejected</option>
                                             <option value="completed">Completed</option>
-                                        </select>
+                                        </AppSelect>
                                     </>
                                 )}
                                 totalItems={requests.total}
@@ -310,7 +318,7 @@ export function ExitDeskSection() {
 
                                 <label className="app-field">
                                     <span className="app-field__label">Next status</span>
-                                    <select
+                                    <AppSelect
                                         className="app-field__control"
                                         disabled={closedRequest || !statusOptions.length}
                                         onChange={(event) => setForm((current) => ({ ...current, status: event.target.value }))}
@@ -319,7 +327,7 @@ export function ExitDeskSection() {
                                         {statusOptions.map((status) => (
                                             <option key={status} value={status}>{status.replace('_', ' ')}</option>
                                         ))}
-                                    </select>
+                                    </AppSelect>
                                 </label>
 
                                 <label className="app-field">

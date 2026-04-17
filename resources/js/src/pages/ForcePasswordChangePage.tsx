@@ -7,7 +7,7 @@ import { Panel } from "../components/ui/Panel";
 import { useToast } from "../feedback/ToastProvider";
 
 export function ForcePasswordChangePage() {
-    const { changePassword, isExco } = useAuth();
+    const { changePassword, isExco, mustChangePassword } = useAuth();
     const { showToast } = useToast();
     const navigate = useNavigate();
     const [form, setForm] = useState({
@@ -43,11 +43,12 @@ export function ForcePasswordChangePage() {
             <div className="auth-gate-card">
                 <Panel
                     eyebrow="Security"
-                    title="Change your temporary password"
+                    title={mustChangePassword ? 'Change your temporary password' : 'Change your password'}
                 >
                     <p className="auth-gate-copy">
-                        Your account was created with a temporary password. Set a
-                        new password before you continue into the platform.
+                        {mustChangePassword
+                            ? 'Your account was created with a temporary password. Set a new password before you continue into the platform.'
+                            : 'Update your current password to keep your account secure.'}
                     </p>
 
                     <form className="auth-gate-form" onSubmit={handleSubmit}>

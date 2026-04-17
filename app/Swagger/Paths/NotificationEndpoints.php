@@ -13,6 +13,9 @@ class NotificationEndpoints
         tags: ['Notifications'],
         parameters: [
             new OA\Parameter(name: 'limit', in: 'query', required: false, schema: new OA\Schema(type: 'integer', example: 20)),
+            new OA\Parameter(name: 'page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', example: 1)),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', example: 10)),
+            new OA\Parameter(name: 'unread_only', in: 'query', required: false, schema: new OA\Schema(type: 'boolean', example: true)),
         ],
         responses: [
             new OA\Response(
@@ -22,6 +25,18 @@ class NotificationEndpoints
                     properties: [
                         new OA\Property(property: 'unread_count', type: 'integer', example: 3),
                         new OA\Property(property: 'notifications', type: 'array', items: new OA\Items(ref: '#/components/schemas/AppNotification')),
+                        new OA\Property(
+                            property: 'pagination',
+                            type: 'object',
+                            properties: [
+                                new OA\Property(property: 'current_page', type: 'integer', example: 1),
+                                new OA\Property(property: 'last_page', type: 'integer', example: 4),
+                                new OA\Property(property: 'per_page', type: 'integer', example: 10),
+                                new OA\Property(property: 'total', type: 'integer', example: 36),
+                                new OA\Property(property: 'from', type: 'integer', nullable: true, example: 1),
+                                new OA\Property(property: 'to', type: 'integer', nullable: true, example: 10),
+                            ]
+                        ),
                     ]
                 )
             ),

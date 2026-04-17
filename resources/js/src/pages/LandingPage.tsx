@@ -779,25 +779,9 @@ export function LandingPage() {
             {idleNotice ? (
                 <div className="constitution-modal-backdrop">
                     <div className="constitution-modal constitution-modal--narrow session-expired-modal">
-                        <div className="constitution-modal__header session-expired-modal__header">
-                            <div>
-                                <div className="constitution-modal__eyebrow">
-                                    Session Notice
-                                </div>
-                                <h3>Signed out for inactivity</h3>
-                            </div>
-                            <button
-                                className="constitution-modal__close"
-                                onClick={() => setIdleNotice("")}
-                                type="button"
-                            >
-                                Close
-                            </button>
-                        </div>
-
                         <div className="constitution-modal__body">
                             <div className="session-expired-modal__body">
-                                <p>{idleNotice}</p>
+                                <p>You were signed out after 5 minutes of inactivity.</p>
                                 <button
                                     className="landing-btn landing-btn--primary"
                                     onClick={() => setIdleNotice("")}

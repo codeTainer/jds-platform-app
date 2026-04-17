@@ -12,16 +12,30 @@ class NotificationController extends Controller
     {
         /** @var User $user */
         $user = $request->user();
-        $limit = min(max($request->integer('limit', 20), 1), 50);
+        $perPage = min(max($request->integer('per_page', $request->integer('limit', 20)), 1), 50);
+        $query = $request->boolean('unread_only')
+            ? $user->unreadNotifications()
+            : $user->notifications();
+
+        $notifications = $query
+            ->latest()
+            ->paginate($perPage)
+            ->withQueryString();
 
         return response()->json([
             'unread_count' => $user->unreadNotifications()->count(),
-            'notifications' => $user->notifications()
-                ->latest()
-                ->limit($limit)
-                ->get()
+            'notifications' => $notifications
+                ->getCollection()
                 ->map(fn (DatabaseNotification $notification) => $this->transformNotification($notification))
                 ->values(),
+            'pagination' => [
+                'current_page' => $notifications->currentPage(),
+                'last_page' => $notifications->lastPage(),
+                'per_page' => $notifications->perPage(),
+                'total' => $notifications->total(),
+                'from' => $notifications->firstItem(),
+                'to' => $notifications->lastItem(),
+            ],
         ]);
     }
 

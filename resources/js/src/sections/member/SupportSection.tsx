@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AppSelect } from '../../components/ui/AppSelect';
 import { DataTable } from '../../components/ui/DataTable';
 import { Notice } from '../../components/ui/Notice';
 import { PageHeader } from '../../components/ui/PageHeader';
@@ -62,6 +63,7 @@ export function SupportSection() {
     const [concerns, setConcerns] = useState<PaginatedResponse<Concern> | null>(null);
     const [selectedConcernId, setSelectedConcernId] = useState<number | null>(null);
     const [page, setPage] = useState(1);
+    const [perPage, setPerPage] = useState(10);
     const [statusFilter, setStatusFilter] = useState('');
     const [referenceTypeFilter, setReferenceTypeFilter] = useState('');
     const [submitting, setSubmitting] = useState(false);
@@ -86,11 +88,11 @@ export function SupportSection() {
         }
     };
 
-    const loadConcerns = async (nextPage = page) => {
+    const loadConcerns = async (nextPage = page, nextPerPage = perPage) => {
         const { data } = await api.get<PaginatedResponse<Concern>>('/api/member/concerns', {
             params: {
                 page: nextPage,
-                per_page: 10,
+                per_page: nextPerPage,
                 status: statusFilter || undefined,
                 reference_type: referenceTypeFilter || undefined,
             },
@@ -98,6 +100,7 @@ export function SupportSection() {
 
         setConcerns(data);
         setPage(data.current_page);
+        setPerPage(data.per_page);
         setSelectedConcernId((current) => {
             if (current && data.data.some((concern) => concern.id === current)) {
                 return current;
@@ -117,11 +120,11 @@ export function SupportSection() {
 
     useEffect(() => {
         const timeout = window.setTimeout(() => {
-            void loadConcerns(1);
+            void loadConcerns(1, perPage);
         }, 250);
 
         return () => window.clearTimeout(timeout);
-    }, [statusFilter, referenceTypeFilter]);
+    }, [statusFilter, referenceTypeFilter, perPage]);
 
     async function submitConcern(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -191,7 +194,7 @@ export function SupportSection() {
                         <form className="grid gap-4 md:grid-cols-2" onSubmit={(event) => void submitConcern(event)}>
                             <label className="app-field">
                                 <span className="app-field__label">Concern category</span>
-                                <select
+                                <AppSelect
                                     className="app-field__control"
                                     onChange={(event) => setForm((current) => ({
                                         ...current,
@@ -204,12 +207,12 @@ export function SupportSection() {
                                     {referenceGroups.map((group) => (
                                         <option key={group.type} value={group.type}>{group.label}</option>
                                     ))}
-                                </select>
+                                </AppSelect>
                             </label>
 
                             <label className="app-field">
                                 <span className="app-field__label">Related record</span>
-                                <select
+                                <AppSelect
                                     className="app-field__control"
                                     disabled={!selectedGroup?.requires_record}
                                     onChange={(event) => setForm((current) => ({ ...current, reference_id: event.target.value }))}
@@ -220,7 +223,7 @@ export function SupportSection() {
                                     {selectedGroup?.options.map((option) => (
                                         <option key={option.id} value={option.id}>{option.label}</option>
                                     ))}
-                                </select>
+                                </AppSelect>
                             </label>
 
                             <label className="app-field md:col-span-2">
@@ -295,25 +298,30 @@ export function SupportSection() {
                                     },
                                 ]}
                                 currentPage={concerns.current_page}
+                                currentPerPage={perPage}
                                 emptyMessage="You have not submitted any concerns yet."
                                 exportFilename="my-concerns.csv"
                                 filterPlaceholder="Filter your concerns"
                                 onPageChange={(nextPage) => void loadConcerns(nextPage)}
+                                onPerPageChange={(value) => {
+                                    setPage(1);
+                                    setPerPage(value);
+                                }}
                                 rowKey={(concern) => concern.id}
                                 rows={concerns.data}
                                 toolbarExtras={(
                                     <>
-                                        <select className="app-filter-select" onChange={(event) => setReferenceTypeFilter(event.target.value)} value={referenceTypeFilter}>
+                                        <AppSelect className="app-filter-select" onChange={(event) => setReferenceTypeFilter(event.target.value)} value={referenceTypeFilter}>
                                             <option value="">All categories</option>
                                             {referenceGroups.map((group) => <option key={group.type} value={group.type}>{group.label}</option>)}
-                                        </select>
-                                        <select className="app-filter-select" onChange={(event) => setStatusFilter(event.target.value)} value={statusFilter}>
+                                        </AppSelect>
+                                        <AppSelect className="app-filter-select" onChange={(event) => setStatusFilter(event.target.value)} value={statusFilter}>
                                             <option value="">All statuses</option>
                                             <option value="open">Open</option>
                                             <option value="in_review">In review</option>
                                             <option value="resolved">Resolved</option>
                                             <option value="rejected">Rejected</option>
-                                        </select>
+                                        </AppSelect>
                                     </>
                                 )}
                                 totalItems={concerns.total}
@@ -321,12 +329,35 @@ export function SupportSection() {
                             />
                         ) : <Notice>{loading ? 'Loading your concern history...' : 'No concern records available yet.'}</Notice>}
                     </Panel>
+                </div>
+            ) : null}
 
-                    {selectedConcern ? (
-                        <Panel eyebrow={selectedConcern.reference_group_label} title="Concern detail">
+            {activeTab === 'history' && selectedConcern ? (
+                <div className="constitution-modal-backdrop" onClick={() => setSelectedConcernId(null)} role="presentation">
+                    <div
+                        aria-modal="true"
+                        className="constitution-modal constitution-modal--narrow"
+                        onClick={(event) => event.stopPropagation()}
+                        role="dialog"
+                    >
+                        <div className="constitution-modal__header">
+                            <div>
+                                <p className="constitution-modal__eyebrow">{selectedConcern.reference_group_label}</p>
+                                <h3>{selectedConcern.subject}</h3>
+                            </div>
+                            <button
+                                aria-label="Close concern detail"
+                                className="constitution-modal__close"
+                                onClick={() => setSelectedConcernId(null)}
+                                type="button"
+                            >
+                                Close
+                            </button>
+                        </div>
+                        <div className="constitution-modal__body">
                             <div className="support-detail-grid">
                                 <div className="support-message-box">
-                                    <h4>{selectedConcern.subject}</h4>
+                                    <h4>Concern details</h4>
                                     <p>{selectedConcern.message}</p>
                                 </div>
                                 <div className="support-message-box">
@@ -348,13 +379,20 @@ export function SupportSection() {
                             </div>
                             {selectedConcern.action_url ? (
                                 <div className="mt-4">
-                                    <button className="landing-btn landing-btn--secondary" onClick={() => navigate(selectedConcern.action_url!)} type="button">
+                                    <button
+                                        className="landing-btn landing-btn--secondary"
+                                        onClick={() => {
+                                            setSelectedConcernId(null);
+                                            navigate(selectedConcern.action_url!);
+                                        }}
+                                        type="button"
+                                    >
                                         Open linked workspace
                                     </button>
                                 </div>
                             ) : null}
-                        </Panel>
-                    ) : null}
+                        </div>
+                    </div>
                 </div>
             ) : null}
         </div>

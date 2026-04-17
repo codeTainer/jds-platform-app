@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
+import { AppSelect } from '../../components/ui/AppSelect';
 import { DataTable } from '../../components/ui/DataTable';
 import { Notice } from '../../components/ui/Notice';
 import { PageHeader } from '../../components/ui/PageHeader';
@@ -45,6 +46,7 @@ export function SupportDeskSection() {
     const [concerns, setConcerns] = useState<PaginatedResponse<Concern> | null>(null);
     const [selectedConcernId, setSelectedConcernId] = useState<number | null>(null);
     const [page, setPage] = useState(1);
+    const [perPage, setPerPage] = useState(10);
     const [statusFilter, setStatusFilter] = useState('');
     const [referenceTypeFilter, setReferenceTypeFilter] = useState('');
     const [memberSearch, setMemberSearch] = useState('');
@@ -77,11 +79,11 @@ export function SupportDeskSection() {
                 : ['open', 'in_review', 'resolved', 'rejected']
         : ['open', 'in_review', 'resolved', 'rejected'];
 
-    const loadConcerns = async (nextPage = page) => {
+    const loadConcerns = async (nextPage = page, nextPerPage = perPage) => {
         const { data } = await api.get<PaginatedResponse<Concern>>('/api/exco/concerns', {
             params: {
                 page: nextPage,
-                per_page: 10,
+                per_page: nextPerPage,
                 status: statusFilter || undefined,
                 reference_type: referenceTypeFilter || undefined,
                 member_search: memberSearch || undefined,
@@ -90,6 +92,7 @@ export function SupportDeskSection() {
 
         setConcerns(data);
         setPage(data.current_page);
+        setPerPage(data.per_page);
         setSelectedConcernId((current) => {
             if (current && data.data.some((concern) => concern.id === current)) {
                 return current;
@@ -116,11 +119,11 @@ export function SupportDeskSection() {
         }
 
         const timeout = window.setTimeout(() => {
-            void loadConcerns(1);
+            void loadConcerns(1, perPage);
         }, 300);
 
         return () => window.clearTimeout(timeout);
-    }, [statusFilter, referenceTypeFilter, memberSearch, filtersLoaded]);
+    }, [statusFilter, referenceTypeFilter, memberSearch, filtersLoaded, perPage]);
 
     useEffect(() => {
         if (!selectedConcern) {
@@ -198,7 +201,6 @@ export function SupportDeskSection() {
                                                 className="app-icon-button"
                                                 onClick={() => {
                                                     setSelectedConcernId(concern.id);
-                                                    setActiveTab('workspace');
                                                 }}
                                                 title="View concern"
                                                 type="button"
@@ -209,10 +211,15 @@ export function SupportDeskSection() {
                                     },
                                 ]}
                                 currentPage={concerns.current_page}
+                                currentPerPage={perPage}
                                 emptyMessage="No concerns have been submitted yet."
                                 exportFilename="support-concerns.csv"
                                 filterPlaceholder="Filter concern queue"
                                 onPageChange={(nextPage) => void loadConcerns(nextPage)}
+                                onPerPageChange={(value) => {
+                                    setPage(1);
+                                    setPerPage(value);
+                                }}
                                 rowKey={(concern) => concern.id}
                                 rows={concerns.data}
                                 toolbarExtras={(
@@ -223,17 +230,17 @@ export function SupportDeskSection() {
                                             placeholder="Search member"
                                             value={memberSearch}
                                         />
-                                        <select className="app-filter-select" onChange={(event) => setReferenceTypeFilter(event.target.value)} value={referenceTypeFilter}>
+                                        <AppSelect className="app-filter-select" onChange={(event) => setReferenceTypeFilter(event.target.value)} value={referenceTypeFilter}>
                                             <option value="">All categories</option>
                                             {referenceGroups.map((group) => <option key={group.type} value={group.type}>{group.label}</option>)}
-                                        </select>
-                                        <select className="app-filter-select" onChange={(event) => setStatusFilter(event.target.value)} value={statusFilter}>
+                                        </AppSelect>
+                                        <AppSelect className="app-filter-select" onChange={(event) => setStatusFilter(event.target.value)} value={statusFilter}>
                                             <option value="">All statuses</option>
                                             <option value="open">Open</option>
                                             <option value="in_review">In review</option>
                                             <option value="resolved">Resolved</option>
                                             <option value="rejected">Rejected</option>
-                                        </select>
+                                        </AppSelect>
                                     </>
                                 )}
                                 totalItems={concerns.total}
@@ -278,7 +285,7 @@ export function SupportDeskSection() {
                                 <form className="grid gap-4" onSubmit={(event) => void updateConcern(event)}>
                                     <label className="app-field">
                                         <span className="app-field__label">Status</span>
-                                        <select
+                                        <AppSelect
                                             className="app-field__control"
                                             disabled={concernIsClosed}
                                             onChange={(event) => setResolutionForm((current) => ({ ...current, status: event.target.value }))}
@@ -289,7 +296,7 @@ export function SupportDeskSection() {
                                                     {status.replace('_', ' ')}
                                                 </option>
                                             ))}
-                                        </select>
+                                        </AppSelect>
                                     </label>
                                     <label className="app-field">
                                         <span className="app-field__label">Response note</span>
@@ -315,6 +322,104 @@ export function SupportDeskSection() {
                     ) : (
                         <Notice>Select a concern from the queue to open its full resolution workspace.</Notice>
                     )}
+                </div>
+            ) : null}
+
+            {activeTab === 'queue' && selectedConcern ? (
+                <div className="constitution-modal-backdrop" onClick={() => setSelectedConcernId(null)} role="presentation">
+                    <div
+                        aria-modal="true"
+                        className="constitution-modal"
+                        onClick={(event) => event.stopPropagation()}
+                        role="dialog"
+                    >
+                        <div className="constitution-modal__header">
+                            <div>
+                                <p className="constitution-modal__eyebrow">{selectedConcern.reference_group_label}</p>
+                                <h3>{selectedConcern.subject}</h3>
+                            </div>
+                            <button
+                                aria-label="Close concern"
+                                className="constitution-modal__close"
+                                onClick={() => setSelectedConcernId(null)}
+                                type="button"
+                            >
+                                Close
+                            </button>
+                        </div>
+                        <div className="constitution-modal__body">
+                            <div className="support-detail-grid">
+                                <div className="support-message-box">
+                                    <h4>Member issue</h4>
+                                    <p>{selectedConcern.message}</p>
+                                </div>
+                                <div className="support-message-box">
+                                    <h4>Member</h4>
+                                    <p>{selectedConcern.member?.full_name ?? 'Unknown member'}</p>
+                                    <p>{selectedConcern.member?.member_number ?? 'No member code'}</p>
+                                    <p>{selectedConcern.member?.email ?? 'No email'}</p>
+                                </div>
+                                <div className="support-message-box">
+                                    <h4>Linked record</h4>
+                                    <p>{selectedConcern.reference_label}</p>
+                                    {selectedConcern.reference_subtitle ? <p>{selectedConcern.reference_subtitle}</p> : null}
+                                </div>
+                                <div className="support-message-box">
+                                    <h4>Timeline</h4>
+                                    <p>Status: {selectedConcern.status.replace('_', ' ')}</p>
+                                    <p>Raised: {formatDate(selectedConcern.raised_at)}</p>
+                                    <p>Resolved: {formatDate(selectedConcern.resolved_at)}</p>
+                                </div>
+                            </div>
+
+                            <div className="mt-6">
+                                <form className="grid gap-4" onSubmit={(event) => void updateConcern(event)}>
+                                    <label className="app-field">
+                                        <span className="app-field__label">Status</span>
+                                        <AppSelect
+                                            className="app-field__control"
+                                            disabled={concernIsClosed}
+                                            onChange={(event) => setResolutionForm((current) => ({ ...current, status: event.target.value }))}
+                                            value={resolutionForm.status}
+                                        >
+                                            {availableStatusOptions.map((status) => (
+                                                <option key={status} value={status}>
+                                                    {status.replace('_', ' ')}
+                                                </option>
+                                            ))}
+                                        </AppSelect>
+                                    </label>
+                                    <label className="app-field">
+                                        <span className="app-field__label">Response note</span>
+                                        <textarea
+                                            className="app-field__control"
+                                            disabled={concernIsClosed}
+                                            onChange={(event) => setResolutionForm((current) => ({ ...current, resolution_note: event.target.value }))}
+                                            placeholder="Explain what you checked, what you found, and the action taken."
+                                            value={resolutionForm.resolution_note}
+                                        />
+                                    </label>
+                                    {concernIsClosed ? (
+                                        <Notice>
+                                            This concern is already closed as <strong>{selectedConcern.status.replace('_', ' ')}</strong>. Closed concerns stay on record and can no longer be changed.
+                                        </Notice>
+                                    ) : null}
+                                    <div className="record-action-group">
+                                        <button
+                                            className="rounded-full border border-[rgba(12,59,102,0.16)] bg-white px-4 py-2.5 text-[0.96rem] font-semibold text-[var(--ink)]"
+                                            onClick={() => setSelectedConcernId(null)}
+                                            type="button"
+                                        >
+                                            Close
+                                        </button>
+                                        <button className="rounded-full bg-[var(--forest)] px-5 py-3.5 text-[1rem] font-semibold text-white" disabled={concernIsClosed} type="submit">
+                                            Save concern update
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             ) : null}
         </div>

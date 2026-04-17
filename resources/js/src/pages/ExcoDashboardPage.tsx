@@ -10,11 +10,14 @@ import { ReportsSection } from '../sections/exco/ReportsSection';
 import { ShareoutStudioSection } from '../sections/exco/ShareoutStudioSection';
 import { SavingsDeskSection } from '../sections/exco/SavingsDeskSection';
 import { SupportDeskSection } from '../sections/exco/SupportDeskSection';
+import { AccountSection } from '../sections/shared/AccountSection';
+import { NotificationsSection } from '../sections/shared/NotificationsSection';
 
 export function ExcoDashboardPage() {
     return (
         <Routes>
             <Route element={<OverviewSection />} index />
+            <Route element={<AccountSection />} path="account" />
             <Route element={<CycleStudioSection />} path="cycles" />
             <Route element={<ApplicationsSection />} path="applications" />
             <Route element={<MembersSection />} path="members" />
@@ -22,6 +25,7 @@ export function ExcoDashboardPage() {
             <Route element={<ShareoutStudioSection />} path="shareouts" />
             <Route element={<LoansSection />} path="loans" />
             <Route element={<ExitDeskSection />} path="exits" />
+            <Route element={<NotificationsSection />} path="notifications" />
             <Route element={<AuditLogSection />} path="audit" />
             <Route element={<SupportDeskSection />} path="support" />
             <Route element={<ReportsSection />} path="reports" />

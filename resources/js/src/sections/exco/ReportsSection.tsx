@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { AppSelect } from '../../components/ui/AppSelect';
 import { DataTable } from '../../components/ui/DataTable';
 import { Notice } from '../../components/ui/Notice';
 import { PageHeader } from '../../components/ui/PageHeader';
@@ -57,6 +58,10 @@ export function ReportsSection() {
     const [loanPage, setLoanPage] = useState(1);
     const [shareoutPage, setShareoutPage] = useState(1);
     const [concernPage, setConcernPage] = useState(1);
+    const [savingsPerPage, setSavingsPerPage] = useState(10);
+    const [loanPerPage, setLoanPerPage] = useState(10);
+    const [shareoutPerPage, setShareoutPerPage] = useState(10);
+    const [concernPerPage, setConcernPerPage] = useState(10);
     const [error, setError] = useState('');
 
     const activeReportTab = reportTabs.find((tab) => tab.id === activeTab) ?? reportTabs[0];
@@ -70,56 +75,60 @@ export function ReportsSection() {
         setSummary(data);
     };
 
-    const loadSavings = async (nextPage = savingsPage) => {
+    const loadSavings = async (nextPage = savingsPage, nextPerPage = savingsPerPage) => {
         const { data } = await api.get<PaginatedResponse<Member>>('/api/exco/reports/savings', {
             params: {
                 page: nextPage,
-                per_page: 10,
+                per_page: nextPerPage,
                 membership_cycle_id: cycleFilter || undefined,
                 search: memberSearch || undefined,
             },
         });
         setSavingsRows(data);
         setSavingsPage(data.current_page);
+        setSavingsPerPage(data.per_page);
     };
 
-    const loadLoans = async (nextPage = loanPage) => {
+    const loadLoans = async (nextPage = loanPage, nextPerPage = loanPerPage) => {
         const { data } = await api.get<PaginatedResponse<Loan>>('/api/exco/reports/loans', {
             params: {
                 page: nextPage,
-                per_page: 10,
+                per_page: nextPerPage,
                 membership_cycle_id: cycleFilter || undefined,
                 status: loanStatusFilter || undefined,
             },
         });
         setLoanRows(data);
         setLoanPage(data.current_page);
+        setLoanPerPage(data.per_page);
     };
 
-    const loadShareouts = async (nextPage = shareoutPage) => {
+    const loadShareouts = async (nextPage = shareoutPage, nextPerPage = shareoutPerPage) => {
         const { data } = await api.get<PaginatedResponse<ShareoutItem>>('/api/exco/reports/shareouts', {
             params: {
                 page: nextPage,
-                per_page: 10,
+                per_page: nextPerPage,
                 membership_cycle_id: cycleFilter || undefined,
                 status: shareoutStatusFilter || undefined,
             },
         });
         setShareoutRows(data);
         setShareoutPage(data.current_page);
+        setShareoutPerPage(data.per_page);
     };
 
-    const loadConcerns = async (nextPage = concernPage) => {
+    const loadConcerns = async (nextPage = concernPage, nextPerPage = concernPerPage) => {
         const { data } = await api.get<PaginatedResponse<Concern>>('/api/exco/reports/concerns', {
             params: {
                 page: nextPage,
-                per_page: 10,
+                per_page: nextPerPage,
                 status: concernStatusFilter || undefined,
                 reference_type: concernTypeFilter || undefined,
             },
         });
         setConcernRows(data);
         setConcernPage(data.current_page);
+        setConcernPerPage(data.per_page);
     };
 
     useEffect(() => {
@@ -146,15 +155,15 @@ export function ReportsSection() {
         const timeout = window.setTimeout(() => {
             void Promise.all([
                 loadSummary(),
-                loadSavings(1),
-                loadLoans(1),
-                loadShareouts(1),
-                loadConcerns(1),
+                loadSavings(1, savingsPerPage),
+                loadLoans(1, loanPerPage),
+                loadShareouts(1, shareoutPerPage),
+                loadConcerns(1, concernPerPage),
             ]);
         }, 300);
 
         return () => window.clearTimeout(timeout);
-    }, [cycleFilter, memberSearch, loanStatusFilter, shareoutStatusFilter, concernStatusFilter, concernTypeFilter]);
+    }, [cycleFilter, memberSearch, loanStatusFilter, shareoutStatusFilter, concernStatusFilter, concernTypeFilter, savingsPerPage, loanPerPage, shareoutPerPage, concernPerPage]);
 
     async function exportSavings(format: TableExportFormat) {
         const { data } = await api.get<PaginatedResponse<Member>>('/api/exco/reports/savings', {
@@ -271,10 +280,10 @@ export function ReportsSection() {
                     <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-5">
                         <label className="app-field">
                             <span className="app-field__label">Cycle</span>
-                            <select className="app-field__control" onChange={(event) => setCycleFilter(event.target.value)} value={cycleFilter}>
+                            <AppSelect className="app-field__control" onChange={(event) => setCycleFilter(event.target.value)} value={cycleFilter}>
                                 <option value="">Active cycle / all cycles</option>
                                 {cycles.map((cycle) => <option key={cycle.id} value={cycle.id}>{cycle.code}</option>)}
-                            </select>
+                            </AppSelect>
                         </label>
                         {activeTab === 'savings' ? (
                             <label className="app-field">
@@ -285,7 +294,7 @@ export function ReportsSection() {
                         {activeTab === 'loans' ? (
                             <label className="app-field">
                                 <span className="app-field__label">Loan status</span>
-                                <select className="app-field__control" onChange={(event) => setLoanStatusFilter(event.target.value)} value={loanStatusFilter}>
+                                <AppSelect className="app-field__control" onChange={(event) => setLoanStatusFilter(event.target.value)} value={loanStatusFilter}>
                                     <option value="">All statuses</option>
                                     <option value="pending_guarantor">Pending guarantor</option>
                                     <option value="guarantor_approved">Guarantor approved</option>
@@ -294,34 +303,34 @@ export function ReportsSection() {
                                     <option value="disbursed">Disbursed</option>
                                     <option value="partially_repaid">Partially repaid</option>
                                     <option value="repaid">Repaid</option>
-                                </select>
+                                </AppSelect>
                             </label>
                         ) : null}
                         {activeTab === 'shareouts' ? (
                             <label className="app-field">
                                 <span className="app-field__label">Share-out status</span>
-                                <select className="app-field__control" onChange={(event) => setShareoutStatusFilter(event.target.value)} value={shareoutStatusFilter}>
+                                <AppSelect className="app-field__control" onChange={(event) => setShareoutStatusFilter(event.target.value)} value={shareoutStatusFilter}>
                                     <option value="">All statuses</option>
                                     <option value="pending">Pending</option>
                                     <option value="paid">Paid</option>
-                                </select>
+                                </AppSelect>
                             </label>
                         ) : null}
                         {activeTab === 'concerns' ? (
                             <>
                                 <label className="app-field">
                                     <span className="app-field__label">Concern status</span>
-                                    <select className="app-field__control" onChange={(event) => setConcernStatusFilter(event.target.value)} value={concernStatusFilter}>
+                                    <AppSelect className="app-field__control" onChange={(event) => setConcernStatusFilter(event.target.value)} value={concernStatusFilter}>
                                         <option value="">All statuses</option>
                                         <option value="open">Open</option>
                                         <option value="in_review">In review</option>
                                         <option value="resolved">Resolved</option>
                                         <option value="rejected">Rejected</option>
-                                    </select>
+                                    </AppSelect>
                                 </label>
                                 <label className="app-field">
                                     <span className="app-field__label">Concern category</span>
-                                    <select className="app-field__control" onChange={(event) => setConcernTypeFilter(event.target.value)} value={concernTypeFilter}>
+                                    <AppSelect className="app-field__control" onChange={(event) => setConcernTypeFilter(event.target.value)} value={concernTypeFilter}>
                                         <option value="">All categories</option>
                                         <option value="account">Account / Profile</option>
                                         <option value="share_payment_submission">Share Receipt Submission</option>
@@ -331,7 +340,7 @@ export function ReportsSection() {
                                         <option value="loan">Loan Record</option>
                                         <option value="loan_repayment_submission">Loan Repayment Receipt</option>
                                         <option value="shareout_item">Share-out Record</option>
-                                    </select>
+                                    </AppSelect>
                                 </label>
                             </>
                         ) : null}
@@ -380,11 +389,16 @@ export function ReportsSection() {
                                     { key: 'fees_paid_total', header: 'Fees Paid Total', render: (member) => formatCurrency(member.membership_fees_paid_total ?? 0) },
                                 ]}
                                 currentPage={savingsRows.current_page}
+                                currentPerPage={savingsPerPage}
                                 emptyMessage="No savings records found for the selected filters."
                                 exportFilename="savings-report.csv"
                                 filterPlaceholder="Filter savings report"
                                 onExport={(format) => void exportSavings(format)}
                                 onPageChange={(nextPage) => void loadSavings(nextPage)}
+                                onPerPageChange={(value) => {
+                                    setSavingsPage(1);
+                                    setSavingsPerPage(value);
+                                }}
                                 rowKey={(member) => member.id}
                                 rows={savingsRows.data}
                                 totalItems={savingsRows.total}
@@ -411,11 +425,16 @@ export function ReportsSection() {
                                     { key: 'requested_at', header: 'Requested At', render: (loan) => formatDate(loan.requested_at) },
                                 ]}
                                 currentPage={loanRows.current_page}
+                                currentPerPage={loanPerPage}
                                 emptyMessage="No loan records found for the selected filters."
                                 exportFilename="loan-report.csv"
                                 filterPlaceholder="Filter loan report"
                                 onExport={(format) => void exportLoans(format)}
                                 onPageChange={(nextPage) => void loadLoans(nextPage)}
+                                onPerPageChange={(value) => {
+                                    setLoanPage(1);
+                                    setLoanPerPage(value);
+                                }}
                                 rowKey={(loan) => loan.id}
                                 rows={loanRows.data}
                                 totalItems={loanRows.total}
@@ -442,11 +461,16 @@ export function ReportsSection() {
                                     { key: 'paid_at', header: 'Paid At', render: (item) => formatDate(item.paid_at) },
                                 ]}
                                 currentPage={shareoutRows.current_page}
+                                currentPerPage={shareoutPerPage}
                                 emptyMessage="No share-out records found for the selected filters."
                                 exportFilename="shareout-report.csv"
                                 filterPlaceholder="Filter share-out report"
                                 onExport={(format) => void exportShareouts(format)}
                                 onPageChange={(nextPage) => void loadShareouts(nextPage)}
+                                onPerPageChange={(value) => {
+                                    setShareoutPage(1);
+                                    setShareoutPerPage(value);
+                                }}
                                 rowKey={(item) => item.id}
                                 rows={shareoutRows.data}
                                 totalItems={shareoutRows.total}
@@ -471,11 +495,16 @@ export function ReportsSection() {
                                     { key: 'resolved_at', header: 'Resolved On', render: (concern) => formatDate(concern.resolved_at) },
                                 ]}
                                 currentPage={concernRows.current_page}
+                                currentPerPage={concernPerPage}
                                 emptyMessage="No concern records found for the selected filters."
                                 exportFilename="concern-report.csv"
                                 filterPlaceholder="Filter concern report"
                                 onExport={(format) => void exportConcerns(format)}
                                 onPageChange={(nextPage) => void loadConcerns(nextPage)}
+                                onPerPageChange={(value) => {
+                                    setConcernPage(1);
+                                    setConcernPerPage(value);
+                                }}
                                 rowKey={(concern) => concern.id}
                                 rows={concernRows.data}
                                 totalItems={concernRows.total}

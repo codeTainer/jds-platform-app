@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { BrandMark } from '../components/ui/BrandMark';
 import { useAuth } from '../auth/AuthContext';
@@ -20,6 +20,38 @@ function BellIcon() {
                 strokeLinejoin="round"
                 strokeWidth="1.8"
             />
+        </svg>
+    );
+}
+
+function SettingsIcon() {
+    return (
+        <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+            <path
+                d="M10.325 4.317a1.724 1.724 0 0 1 3.35 0l.18.73a1.724 1.724 0 0 0 2.573 1.06l.64-.37a1.724 1.724 0 0 1 2.37.631l.446.772a1.724 1.724 0 0 1-.63 2.37l-.641.37a1.724 1.724 0 0 0 0 2.986l.64.37a1.724 1.724 0 0 1 .631 2.37l-.446.772a1.724 1.724 0 0 1-2.37.63l-.64-.369a1.724 1.724 0 0 0-2.573 1.06l-.18.73a1.724 1.724 0 0 1-3.35 0l-.18-.73a1.724 1.724 0 0 0-2.573-1.06l-.64.37a1.724 1.724 0 0 1-2.37-.631l-.446-.772a1.724 1.724 0 0 1 .63-2.37l.641-.37a1.724 1.724 0 0 0 0-2.986l-.64-.37a1.724 1.724 0 0 1-.631-2.37l.446-.772a1.724 1.724 0 0 1 2.37-.63l.64.369a1.724 1.724 0 0 0 2.573-1.06l.18-.73Z"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.5"
+            />
+            <circle cx="12" cy="12" r="3.25" stroke="currentColor" strokeWidth="1.8" />
+        </svg>
+    );
+}
+
+function SunIcon() {
+    return (
+        <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.8" />
+            <path d="M12 2.75v2.5M12 18.75v2.5M21.25 12h-2.5M5.25 12h-2.5M18.54 5.46l-1.77 1.77M7.23 16.77l-1.77 1.77M18.54 18.54l-1.77-1.77M7.23 7.23 5.46 5.46" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" />
+        </svg>
+    );
+}
+
+function MoonIcon() {
+    return (
+        <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+            <path d="M20 14.5A7.5 7.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
         </svg>
     );
 }
@@ -192,6 +224,15 @@ export function DashboardLayout() {
     const navigate = useNavigate();
     const [notificationsOpen, setNotificationsOpen] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [settingsOpen, setSettingsOpen] = useState(false);
+    const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+        if (typeof window === 'undefined') {
+            return 'light';
+        }
+
+        return window.localStorage.getItem('jds-theme') === 'dark' ? 'dark' : 'light';
+    });
+    const settingsRef = useRef<HTMLDivElement | null>(null);
 
     const menu: MenuItem[] = isExco
         ? [
@@ -203,6 +244,7 @@ export function DashboardLayout() {
               { path: '/dashboard/exco/shareouts', label: 'Share-out Studio', icon: <ShareoutIcon /> },
               { path: '/dashboard/exco/loans', label: 'Loan Management', icon: <LoanIcon /> },
               { path: '/dashboard/exco/exits', label: 'Exit Desk', icon: <ExitIcon /> },
+              { path: '/dashboard/exco/notifications', label: 'Notifications', icon: <BellIcon /> },
               { path: '/dashboard/member', label: 'My Profile', icon: <ProfileIcon /> },
               { path: '/dashboard/member/savings', label: 'My Savings', icon: <SavingsIcon /> },
               { path: '/dashboard/member/shareouts', label: 'My Share-outs', icon: <ShareoutIcon /> },
@@ -218,12 +260,28 @@ export function DashboardLayout() {
               { path: '/dashboard/member/shareouts', label: 'Share-outs', icon: <ShareoutIcon /> },
               { path: '/dashboard/member/loans', label: 'Loans', icon: <LoanIcon /> },
               { path: '/dashboard/member/exits', label: 'Exit Requests', icon: <ExitIcon /> },
+              { path: '/dashboard/member/notifications', label: 'Notifications', icon: <BellIcon /> },
               { path: '/dashboard/member/support', label: 'Support', icon: <SupportIcon /> },
           ];
 
     async function openNotifications() {
         setNotificationsOpen(true);
         await refresh();
+    }
+
+    function openAccount() {
+        navigate(isExco ? '/dashboard/exco/account' : '/dashboard/member/account');
+        setSettingsOpen(false);
+    }
+
+    function openPasswordSettings() {
+        navigate(`${isExco ? '/dashboard/exco/account' : '/dashboard/member/account'}?password=1`);
+        setSettingsOpen(false);
+    }
+
+    function openAllNotifications() {
+        navigate(isExco ? '/dashboard/exco/notifications' : '/dashboard/member/notifications');
+        setNotificationsOpen(false);
     }
 
     async function handleNotificationClick(notificationId: string, actionUrl?: string | null) {
@@ -234,6 +292,33 @@ export function DashboardLayout() {
             setNotificationsOpen(false);
         }
     }
+
+    async function handleLogout() {
+        await logout();
+        setSettingsOpen(false);
+        navigate('/');
+    }
+
+    useEffect(() => {
+        document.documentElement.setAttribute('data-theme', theme);
+        window.localStorage.setItem('jds-theme', theme);
+    }, [theme]);
+
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
+                setSettingsOpen(false);
+            }
+        }
+
+        if (settingsOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [settingsOpen]);
 
     return (
         <div className="dashboard-shell">
@@ -307,17 +392,52 @@ export function DashboardLayout() {
                                 <MenuIcon />
                             </button>
                         </div>
-                        <button
-                            className="dashboard-notifications-trigger"
-                            onClick={() => void openNotifications()}
-                            type="button"
-                        >
-                            <BellIcon />
-                            <span>Notifications</span>
-                            {unreadCount > 0 ? (
-                                <span className="dashboard-notifications-trigger__count">{unreadCount}</span>
-                            ) : null}
-                        </button>
+                        <div className="dashboard-main__topbar-actions">
+                            <button
+                                aria-label={theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'}
+                                className="dashboard-theme-trigger"
+                                onClick={() => setTheme((current) => current === 'light' ? 'dark' : 'light')}
+                                type="button"
+                            >
+                                {theme === 'light' ? <MoonIcon /> : <SunIcon />}
+                                <span>{theme === 'light' ? 'Dark theme' : 'Light theme'}</span>
+                            </button>
+                            <button
+                                className="dashboard-notifications-trigger"
+                                onClick={() => void openNotifications()}
+                                type="button"
+                            >
+                                <BellIcon />
+                                <span>Notifications</span>
+                                {unreadCount > 0 ? (
+                                    <span className="dashboard-notifications-trigger__count">{unreadCount}</span>
+                                ) : null}
+                            </button>
+                            <div className="dashboard-settings" ref={settingsRef}>
+                                <button
+                                    aria-expanded={settingsOpen}
+                                    aria-label="Open settings"
+                                    className="dashboard-settings-trigger"
+                                    onClick={() => setSettingsOpen((current) => !current)}
+                                    type="button"
+                                >
+                                    <SettingsIcon />
+                                </button>
+                                {settingsOpen ? (
+                                    <div className="dashboard-settings-menu">
+                                        <button className="dashboard-settings-menu__item" onClick={openAccount} type="button">
+                                            My account
+                                        </button>
+                                        <button className="dashboard-settings-menu__item" onClick={openPasswordSettings} type="button">
+                                            Change password
+                                        </button>
+                                        <button className="dashboard-settings-menu__item dashboard-settings-menu__item--danger" onClick={() => void handleLogout()} type="button">
+                                            Sign out
+                                        </button>
+                                    </div>
+                                ) : null}
+                            </div>
+                        </div>
                     </div>
                     <Outlet />
                 </main>
@@ -361,11 +481,11 @@ export function DashboardLayout() {
 
                         <div className="dashboard-notifications-drawer__body">
                             {loading && notifications.length === 0 ? (
-                                <p className="dashboard-notifications-empty">Loading notifications...</p>
+                                <p className="dashboard-notifications-empty">Loading unread notifications...</p>
                             ) : null}
 
                             {!loading && notifications.length === 0 ? (
-                                <p className="dashboard-notifications-empty">No notifications yet.</p>
+                                <p className="dashboard-notifications-empty">No unread notifications right now.</p>
                             ) : null}
 
                             {notifications.map((notification) => (
@@ -394,6 +514,15 @@ export function DashboardLayout() {
                                     </div>
                                 </button>
                             ))}
+                        </div>
+                        <div className="dashboard-notifications-drawer__footer">
+                            <button
+                                className="dashboard-notifications-drawer__view-all"
+                                onClick={openAllNotifications}
+                                type="button"
+                            >
+                                View all notifications
+                            </button>
                         </div>
                     </aside>
                 </div>

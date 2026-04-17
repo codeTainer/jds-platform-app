@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useToast } from '../../feedback/ToastProvider';
+import { AppSelect } from '../../components/ui/AppSelect';
 import { DataTable } from '../../components/ui/DataTable';
 import { Notice } from '../../components/ui/Notice';
 import { PageHeader } from '../../components/ui/PageHeader';
@@ -63,23 +64,26 @@ export function LoansSection() {
     const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
     const [page, setPage] = useState(1);
     const [repaymentSubmissionPage, setRepaymentSubmissionPage] = useState(1);
+    const [loansPerPage, setLoansPerPage] = useState(10);
+    const [repaymentSubmissionsPerPage, setRepaymentSubmissionsPerPage] = useState(10);
     const [statusFilter, setStatusFilter] = useState('');
     const [requestedMonthFilter, setRequestedMonthFilter] = useState('');
     const [repaymentSubmissionStatusFilter, setRepaymentSubmissionStatusFilter] = useState('');
     const [disbursementForm, setDisbursementForm] = useState<DisbursementForm>(initialDisbursementForm);
     const [disbursementReceiptFile, setDisbursementReceiptFile] = useState<File | null>(null);
 
-    const loadLoans = async (nextPage = page) => {
+    const loadLoans = async (nextPage = page, nextPerPage = loansPerPage) => {
         const { data } = await api.get<PaginatedResponse<Loan>>('/api/exco/loans', {
             params: {
                 page: nextPage,
-                per_page: 10,
+                per_page: nextPerPage,
                 status: statusFilter || undefined,
                 requested_month: requestedMonthFilter || undefined,
             },
         });
         setLoansTable(data);
         setPage(data.current_page);
+        setLoansPerPage(data.per_page);
 
         if (selectedLoan) {
             const updated = data.data.find((loan) => loan.id === selectedLoan.id);
@@ -95,22 +99,23 @@ export function LoansSection() {
 
     useEffect(() => {
         const timeout = window.setTimeout(() => {
-            void loadLoans(1);
+            void loadLoans(1, loansPerPage);
         }, 250);
 
         return () => window.clearTimeout(timeout);
-    }, [statusFilter, requestedMonthFilter]);
+    }, [statusFilter, requestedMonthFilter, loansPerPage]);
 
-    const loadRepaymentSubmissions = async (nextPage = repaymentSubmissionPage) => {
+    const loadRepaymentSubmissions = async (nextPage = repaymentSubmissionPage, nextPerPage = repaymentSubmissionsPerPage) => {
         const { data } = await api.get<PaginatedResponse<LoanRepaymentSubmission>>('/api/exco/loan-repayment-submissions', {
             params: {
                 page: nextPage,
-                per_page: 10,
+                per_page: nextPerPage,
                 status: repaymentSubmissionStatusFilter || undefined,
             },
         });
         setRepaymentSubmissionsTable(data);
         setRepaymentSubmissionPage(data.current_page);
+        setRepaymentSubmissionsPerPage(data.per_page);
     };
 
     useEffect(() => {
@@ -119,11 +124,11 @@ export function LoansSection() {
 
     useEffect(() => {
         const timeout = window.setTimeout(() => {
-            void loadRepaymentSubmissions(1);
+            void loadRepaymentSubmissions(1, repaymentSubmissionsPerPage);
         }, 250);
 
         return () => window.clearTimeout(timeout);
-    }, [repaymentSubmissionStatusFilter]);
+    }, [repaymentSubmissionStatusFilter, repaymentSubmissionsPerPage]);
 
     async function approveLoan(loanId: number) {
         try {
@@ -257,6 +262,7 @@ export function LoansSection() {
                             },
                         ]}
                         currentPage={loansTable.current_page}
+                        currentPerPage={loansPerPage}
                         emptyMessage="No loan requests have been recorded yet."
                         exportFilename="exco-loans.csv"
                         filterPlaceholder="Filter loans"
@@ -268,7 +274,7 @@ export function LoansSection() {
                                     type="month"
                                     value={requestedMonthFilter}
                                 />
-                                <select className="app-filter-select" onChange={(event) => setStatusFilter(event.target.value)} value={statusFilter}>
+                                <AppSelect className="app-filter-select" onChange={(event) => setStatusFilter(event.target.value)} value={statusFilter}>
                                     <option value="">All statuses</option>
                                     <option value="pending_guarantor">Pending guarantor</option>
                                     <option value="guarantor_approved">Guarantor approved</option>
@@ -277,10 +283,14 @@ export function LoansSection() {
                                     <option value="partially_repaid">Partially repaid</option>
                                     <option value="repaid">Repaid</option>
                                     <option value="rejected">Rejected</option>
-                                </select>
+                                </AppSelect>
                             </>
                         )}
                         onPageChange={(nextPage) => void loadLoans(nextPage)}
+                        onPerPageChange={(value) => {
+                            setPage(1);
+                            setLoansPerPage(value);
+                        }}
                         rowKey={(loan) => loan.id}
                         rows={loansTable.data}
                         totalItems={loansTable.total}
@@ -380,19 +390,24 @@ export function LoansSection() {
                                     },
                                 ]}
                                 currentPage={repaymentSubmissionsTable.current_page}
+                                currentPerPage={repaymentSubmissionsPerPage}
                                 emptyMessage="No loan repayment receipts are waiting for review."
                                 exportFilename="loan-repayment-submissions.csv"
                                 filterPlaceholder="Filter repayment submissions"
                                 onPageChange={(nextPage) => void loadRepaymentSubmissions(nextPage)}
+                                onPerPageChange={(value) => {
+                                    setRepaymentSubmissionPage(1);
+                                    setRepaymentSubmissionsPerPage(value);
+                                }}
                                 rowKey={(submission) => submission.id}
                                 rows={repaymentSubmissionsTable.data}
                                 toolbarExtras={(
-                                    <select className="app-filter-select" onChange={(event) => setRepaymentSubmissionStatusFilter(event.target.value)} value={repaymentSubmissionStatusFilter}>
+                                    <AppSelect className="app-filter-select" onChange={(event) => setRepaymentSubmissionStatusFilter(event.target.value)} value={repaymentSubmissionStatusFilter}>
                                         <option value="">All statuses</option>
                                         <option value="pending">Pending</option>
                                         <option value="approved">Approved</option>
                                         <option value="rejected">Rejected</option>
-                                    </select>
+                                    </AppSelect>
                                 )}
                                 totalItems={repaymentSubmissionsTable.total}
                                 totalPages={repaymentSubmissionsTable.last_page}

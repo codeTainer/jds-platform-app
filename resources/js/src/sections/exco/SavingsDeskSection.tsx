@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useToast } from '../../feedback/ToastProvider';
+import { AppSelect } from '../../components/ui/AppSelect';
 import { DataTable } from '../../components/ui/DataTable';
 import { Notice } from '../../components/ui/Notice';
 import { PageHeader } from '../../components/ui/PageHeader';
@@ -47,6 +48,10 @@ export function SavingsDeskSection() {
     const [feeSubmissionsPage, setFeeSubmissionsPage] = useState(1);
     const [sharePurchasesPage, setSharePurchasesPage] = useState(1);
     const [shareSubmissionsPage, setShareSubmissionsPage] = useState(1);
+    const [feesPerPage, setFeesPerPage] = useState(10);
+    const [feeSubmissionsPerPage, setFeeSubmissionsPerPage] = useState(10);
+    const [sharePurchasesPerPage, setSharePurchasesPerPage] = useState(10);
+    const [shareSubmissionsPerPage, setShareSubmissionsPerPage] = useState(10);
     const [shareMonthFilter, setShareMonthFilter] = useState('');
     const [shareStatusFilter, setShareStatusFilter] = useState('');
     const [shareCycleFilter, setShareCycleFilter] = useState('');
@@ -63,12 +68,16 @@ export function SavingsDeskSection() {
         shareSubmissionPage = shareSubmissionsPage,
         feeSubmissionPage = feeSubmissionsPage,
         feePage = feesPage,
+        sharePerPage = sharePurchasesPerPage,
+        shareSubmissionPerPage = shareSubmissionsPerPage,
+        feeSubmissionPerPage = feeSubmissionsPerPage,
+        feePerPage = feesPerPage,
     ) => {
         const [sharePurchasesResponse, shareSubmissionsResponse, feeSubmissionsResponse, feesResponse] = await Promise.all([
             api.get<PaginatedResponse<SharePurchase>>('/api/exco/share-purchases', {
                 params: {
                     page: sharePage,
-                    per_page: 10,
+                    per_page: sharePerPage,
                     share_month: shareMonthFilter || undefined,
                     payment_status: shareStatusFilter || undefined,
                     membership_cycle_id: shareCycleFilter || undefined,
@@ -77,7 +86,7 @@ export function SavingsDeskSection() {
             api.get<PaginatedResponse<SharePaymentSubmission>>('/api/exco/share-payment-submissions', {
                 params: {
                     page: shareSubmissionPage,
-                    per_page: 10,
+                    per_page: shareSubmissionPerPage,
                     share_month: shareMonthFilter || undefined,
                     status: shareStatusFilter || undefined,
                     membership_cycle_id: shareCycleFilter || undefined,
@@ -86,7 +95,7 @@ export function SavingsDeskSection() {
             api.get<PaginatedResponse<MembershipFeeSubmission>>('/api/exco/membership-fee-submissions', {
                 params: {
                     page: feeSubmissionPage,
-                    per_page: 10,
+                    per_page: feeSubmissionPerPage,
                     membership_cycle_id: feeSubmissionCycleFilter || undefined,
                     fee_type: feeSubmissionTypeFilter || undefined,
                     status: feeSubmissionStatusFilter || undefined,
@@ -95,7 +104,7 @@ export function SavingsDeskSection() {
             api.get<PaginatedResponse<MembershipFee>>('/api/exco/membership-fees', {
                 params: {
                     page: feePage,
-                    per_page: 10,
+                    per_page: feePerPage,
                     paid_month: feeMonthFilter || undefined,
                     status: feeStatusFilter || undefined,
                     membership_cycle_id: feeCycleFilter || undefined,
@@ -112,6 +121,10 @@ export function SavingsDeskSection() {
         setShareSubmissionsPage(shareSubmissionsResponse.data.current_page);
         setFeeSubmissionsPage(feeSubmissionsResponse.data.current_page);
         setFeesPage(feesResponse.data.current_page);
+        setSharePurchasesPerPage(sharePurchasesResponse.data.per_page);
+        setShareSubmissionsPerPage(shareSubmissionsResponse.data.per_page);
+        setFeeSubmissionsPerPage(feeSubmissionsResponse.data.per_page);
+        setFeesPerPage(feesResponse.data.per_page);
     };
 
     useEffect(() => {
@@ -139,6 +152,10 @@ export function SavingsDeskSection() {
         feeSubmissionCycleFilter,
         feeSubmissionStatusFilter,
         feeSubmissionTypeFilter,
+        sharePurchasesPerPage,
+        shareSubmissionsPerPage,
+        feeSubmissionsPerPage,
+        feesPerPage,
     ]);
 
     async function reviewShareSubmission(submissionId: number, status: 'approved' | 'rejected') {
@@ -302,11 +319,16 @@ export function SavingsDeskSection() {
                                 },
                             ]}
                             currentPage={shareSubmissionsTable.current_page}
+                            currentPerPage={shareSubmissionsPerPage}
                             emptyMessage="No share payment submissions are waiting for review."
                             exportFilename="share-payment-submissions.csv"
                             filterPlaceholder="Filter share receipts"
                             onExport={(format) => void exportShareSubmissions(format)}
                             onPageChange={(page) => void loadTables(sharePurchasesPage, page, feeSubmissionsPage, feesPage)}
+                            onPerPageChange={(value) => {
+                                setShareSubmissionsPage(1);
+                                setShareSubmissionsPerPage(value);
+                            }}
                             rowKey={(submission) => submission.id}
                             rows={shareSubmissionsTable.data}
                             toolbarExtras={(
@@ -317,16 +339,16 @@ export function SavingsDeskSection() {
                                         type="month"
                                         value={shareMonthFilter}
                                     />
-                                    <select className="app-filter-select" onChange={(event) => setShareStatusFilter(event.target.value)} value={shareStatusFilter}>
+                                    <AppSelect className="app-filter-select" onChange={(event) => setShareStatusFilter(event.target.value)} value={shareStatusFilter}>
                                         <option value="">All statuses</option>
                                         <option value="pending">Pending</option>
                                         <option value="approved">Approved</option>
                                         <option value="rejected">Rejected</option>
-                                    </select>
-                                    <select className="app-filter-select" onChange={(event) => setShareCycleFilter(event.target.value)} value={shareCycleFilter}>
+                                    </AppSelect>
+                                    <AppSelect className="app-filter-select" onChange={(event) => setShareCycleFilter(event.target.value)} value={shareCycleFilter}>
                                         <option value="">All cycles</option>
                                         {cycles.map((cycle) => <option key={cycle.id} value={cycle.id}>{cycle.code}</option>)}
-                                    </select>
+                                    </AppSelect>
                                 </>
                             )}
                             totalItems={shareSubmissionsTable.total}
@@ -351,11 +373,16 @@ export function SavingsDeskSection() {
                                 { key: 'cycle', header: 'Cycle', render: (purchase) => purchase.cycle?.code ?? 'Not set' },
                             ]}
                             currentPage={sharePurchasesTable.current_page}
+                            currentPerPage={sharePurchasesPerPage}
                             emptyMessage="No share purchases have been posted yet."
                             exportFilename="jds-share-purchases.csv"
                             filterPlaceholder="Filter share purchases"
                             onExport={(format) => void exportSharePurchases(format)}
                             onPageChange={(page) => void loadTables(page, shareSubmissionsPage, feeSubmissionsPage, feesPage)}
+                            onPerPageChange={(value) => {
+                                setSharePurchasesPage(1);
+                                setSharePurchasesPerPage(value);
+                            }}
                             rowKey={(purchase) => purchase.id}
                             rows={sharePurchasesTable.data}
                             toolbarExtras={(
@@ -366,16 +393,16 @@ export function SavingsDeskSection() {
                                         type="month"
                                         value={shareMonthFilter}
                                     />
-                                    <select className="app-filter-select" onChange={(event) => setShareStatusFilter(event.target.value)} value={shareStatusFilter}>
+                                    <AppSelect className="app-filter-select" onChange={(event) => setShareStatusFilter(event.target.value)} value={shareStatusFilter}>
                                         <option value="">All statuses</option>
                                         <option value="pending">Pending</option>
                                         <option value="paid">Paid</option>
                                         <option value="confirmed">Confirmed</option>
-                                    </select>
-                                    <select className="app-filter-select" onChange={(event) => setShareCycleFilter(event.target.value)} value={shareCycleFilter}>
+                                    </AppSelect>
+                                    <AppSelect className="app-filter-select" onChange={(event) => setShareCycleFilter(event.target.value)} value={shareCycleFilter}>
                                         <option value="">All cycles</option>
                                         {cycles.map((cycle) => <option key={cycle.id} value={cycle.id}>{cycle.code}</option>)}
-                                    </select>
+                                    </AppSelect>
                                 </>
                             )}
                             totalItems={sharePurchasesTable.total}
@@ -411,30 +438,35 @@ export function SavingsDeskSection() {
                                 },
                             ]}
                             currentPage={feeSubmissionsTable.current_page}
+                            currentPerPage={feeSubmissionsPerPage}
                             emptyMessage="No membership fee submissions are waiting for review."
                             exportFilename="membership-fee-submissions.csv"
                             filterPlaceholder="Filter fee receipts"
                             onExport={(format) => void exportMembershipFeeSubmissions(format)}
                             onPageChange={(page) => void loadTables(sharePurchasesPage, shareSubmissionsPage, page, feesPage)}
+                            onPerPageChange={(value) => {
+                                setFeeSubmissionsPage(1);
+                                setFeeSubmissionsPerPage(value);
+                            }}
                             rowKey={(submission) => submission.id}
                             rows={feeSubmissionsTable.data}
                             toolbarExtras={(
                                 <>
-                                    <select className="app-filter-select" onChange={(event) => setFeeSubmissionCycleFilter(event.target.value)} value={feeSubmissionCycleFilter}>
+                                    <AppSelect className="app-filter-select" onChange={(event) => setFeeSubmissionCycleFilter(event.target.value)} value={feeSubmissionCycleFilter}>
                                         <option value="">All cycles</option>
                                         {cycles.map((cycle) => <option key={cycle.id} value={cycle.id}>{cycle.code}</option>)}
-                                    </select>
-                                    <select className="app-filter-select" onChange={(event) => setFeeSubmissionTypeFilter(event.target.value)} value={feeSubmissionTypeFilter}>
+                                    </AppSelect>
+                                    <AppSelect className="app-filter-select" onChange={(event) => setFeeSubmissionTypeFilter(event.target.value)} value={feeSubmissionTypeFilter}>
                                         <option value="">All fee types</option>
                                         <option value="new_member">New member</option>
                                         <option value="existing_member">Existing member</option>
-                                    </select>
-                                    <select className="app-filter-select" onChange={(event) => setFeeSubmissionStatusFilter(event.target.value)} value={feeSubmissionStatusFilter}>
+                                    </AppSelect>
+                                    <AppSelect className="app-filter-select" onChange={(event) => setFeeSubmissionStatusFilter(event.target.value)} value={feeSubmissionStatusFilter}>
                                         <option value="">All statuses</option>
                                         <option value="pending">Pending</option>
                                         <option value="approved">Approved</option>
                                         <option value="rejected">Rejected</option>
-                                    </select>
+                                    </AppSelect>
                                 </>
                             )}
                             totalItems={feeSubmissionsTable.total}
@@ -459,11 +491,16 @@ export function SavingsDeskSection() {
                                 { key: 'paid_at', header: 'Paid At', render: (fee) => formatDate(fee.paid_at) },
                             ]}
                             currentPage={feesTable.current_page}
+                            currentPerPage={feesPerPage}
                             emptyMessage="No membership fees have been recorded yet."
                             exportFilename="jds-membership-fees.csv"
                             filterPlaceholder="Filter membership fees"
                             onExport={(format) => void exportMembershipFees(format)}
                             onPageChange={(page) => void loadTables(sharePurchasesPage, shareSubmissionsPage, feeSubmissionsPage, page)}
+                            onPerPageChange={(value) => {
+                                setFeesPage(1);
+                                setFeesPerPage(value);
+                            }}
                             rowKey={(fee) => fee.id}
                             rows={feesTable.data}
                             toolbarExtras={(
@@ -474,21 +511,21 @@ export function SavingsDeskSection() {
                                         type="month"
                                         value={feeMonthFilter}
                                     />
-                                    <select className="app-filter-select" onChange={(event) => setFeeCycleFilter(event.target.value)} value={feeCycleFilter}>
+                                    <AppSelect className="app-filter-select" onChange={(event) => setFeeCycleFilter(event.target.value)} value={feeCycleFilter}>
                                         <option value="">All cycles</option>
                                         {cycles.map((cycle) => <option key={cycle.id} value={cycle.id}>{cycle.code}</option>)}
-                                    </select>
-                                    <select className="app-filter-select" onChange={(event) => setFeeTypeFilter(event.target.value)} value={feeTypeFilter}>
+                                    </AppSelect>
+                                    <AppSelect className="app-filter-select" onChange={(event) => setFeeTypeFilter(event.target.value)} value={feeTypeFilter}>
                                         <option value="">All fee types</option>
                                         <option value="new_member">New member</option>
                                         <option value="existing_member">Existing member</option>
-                                    </select>
-                                    <select className="app-filter-select" onChange={(event) => setFeeStatusFilter(event.target.value)} value={feeStatusFilter}>
+                                    </AppSelect>
+                                    <AppSelect className="app-filter-select" onChange={(event) => setFeeStatusFilter(event.target.value)} value={feeStatusFilter}>
                                         <option value="">All statuses</option>
                                         <option value="pending">Pending</option>
                                         <option value="paid">Paid</option>
                                         <option value="waived">Waived</option>
-                                    </select>
+                                    </AppSelect>
                                 </>
                             )}
                             totalItems={feesTable.total}

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { AppSelect } from '../components/ui/AppSelect';
 import { DataTable } from '../components/ui/DataTable';
 import { Notice } from '../components/ui/Notice';
 import { PageHeader } from '../components/ui/PageHeader';
@@ -13,6 +14,8 @@ import { formatCurrency, formatDate, formatMonth } from '../lib/formatters';
 import { api } from '../lib/api';
 import { MemberExitSection } from '../sections/member/ExitSection';
 import { SupportSection } from '../sections/member/SupportSection';
+import { AccountSection } from '../sections/shared/AccountSection';
+import { NotificationsSection } from '../sections/shared/NotificationsSection';
 import type { Loan, LoanGuarantorApproval, LoanOverview, LoanRepaymentSubmission, MemberShareoutOverview, MembershipCycle, MembershipFee, MembershipFeeSubmission, PaginatedResponse, SavingsOverview, SharePaymentSubmission, SharePurchase, ShareoutItem } from '../types';
 
 function ViewIcon() {
@@ -36,10 +39,12 @@ export function MemberDashboardPage() {
     return (
         <Routes>
             <Route element={<MemberHomeSection name={user?.member?.full_name ?? user?.name ?? 'member'} />} index />
+            <Route element={<AccountSection />} path="account" />
             <Route element={<MemberSavingsSection />} path="savings" />
             <Route element={<MemberShareoutsSection />} path="shareouts" />
             <Route element={<MemberLoansSection />} path="loans" />
             <Route element={<MemberExitSection />} path="exits" />
+            <Route element={<NotificationsSection />} path="notifications" />
             <Route element={<SupportSection />} path="support" />
             <Route element={<Navigate replace to="/dashboard/member" />} path="*" />
         </Routes>
@@ -92,21 +97,23 @@ function MemberShareoutsSection() {
     const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
     const [cycles, setCycles] = useState<MembershipCycle[]>([]);
     const [page, setPage] = useState(1);
+    const [perPage, setPerPage] = useState(10);
     const [cycleFilter, setCycleFilter] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [error, setError] = useState('');
 
-    const loadTable = async (nextPage = page) => {
+    const loadTable = async (nextPage = page, nextPerPage = perPage) => {
         const { data } = await api.get<PaginatedResponse<ShareoutItem>>('/api/member/shareouts', {
             params: {
                 page: nextPage,
-                per_page: 10,
+                per_page: nextPerPage,
                 membership_cycle_id: cycleFilter || undefined,
                 status: statusFilter || undefined,
             },
         });
         setItems(data);
         setPage(data.current_page);
+        setPerPage(data.per_page);
         setSelectedItemId((current) => {
             if (current && data.data.some((item) => item.id === current)) {
                 return current;
@@ -128,11 +135,11 @@ function MemberShareoutsSection() {
 
     useEffect(() => {
         const timeout = window.setTimeout(() => {
-            void loadTable(1);
+            void loadTable(1, perPage);
         }, 250);
 
         return () => window.clearTimeout(timeout);
-    }, [cycleFilter, statusFilter]);
+    }, [cycleFilter, statusFilter, perPage]);
 
     const selectedItem = items?.data.find((item) => item.id === selectedItemId) ?? null;
 
@@ -194,23 +201,28 @@ function MemberShareoutsSection() {
                                 },
                             ]}
                             currentPage={items.current_page}
+                            currentPerPage={perPage}
                             emptyMessage="No share-out records have been posted for your account yet."
                             exportFilename="my-shareouts.csv"
                             filterPlaceholder="Filter share-out records"
                             onPageChange={(nextPage) => void loadTable(nextPage)}
+                            onPerPageChange={(value) => {
+                                setPage(1);
+                                setPerPage(value);
+                            }}
                             rowKey={(item) => item.id}
                             rows={items.data}
                             toolbarExtras={(
                                 <>
-                                    <select className="app-filter-select" onChange={(event) => setCycleFilter(event.target.value)} value={cycleFilter}>
+                                    <AppSelect className="app-filter-select" onChange={(event) => setCycleFilter(event.target.value)} value={cycleFilter}>
                                         <option value="">All cycles</option>
                                         {cycles.map((cycle) => <option key={cycle.id} value={cycle.id}>{cycle.code}</option>)}
-                                    </select>
-                                    <select className="app-filter-select" onChange={(event) => setStatusFilter(event.target.value)} value={statusFilter}>
+                                    </AppSelect>
+                                    <AppSelect className="app-filter-select" onChange={(event) => setStatusFilter(event.target.value)} value={statusFilter}>
                                         <option value="">All statuses</option>
                                         <option value="pending">Pending</option>
                                         <option value="paid">Paid</option>
-                                    </select>
+                                    </AppSelect>
                                 </>
                             )}
                             totalItems={items.total}
@@ -292,11 +304,16 @@ function MemberLoansSection() {
     const [overview, setOverview] = useState<LoanOverview | null>(null);
     const [loans, setLoans] = useState<PaginatedResponse<Loan> | null>(null);
     const [guarantorApprovals, setGuarantorApprovals] = useState<PaginatedResponse<LoanGuarantorApproval> | null>(null);
+    const [selectedGuarantorApproval, setSelectedGuarantorApproval] = useState<LoanGuarantorApproval | null>(null);
     const [repaymentSubmissions, setRepaymentSubmissions] = useState<PaginatedResponse<LoanRepaymentSubmission> | null>(null);
     const [guarantors, setGuarantors] = useState<Array<{ id: number; member_number: string | null; full_name: string; email: string }>>([]);
     const [loanPage, setLoanPage] = useState(1);
     const [approvalPage, setApprovalPage] = useState(1);
     const [repaymentSubmissionPage, setRepaymentSubmissionPage] = useState(1);
+    const [loanPerPage, setLoanPerPage] = useState(10);
+    const [approvalPerPage, setApprovalPerPage] = useState(10);
+    const [repaymentSubmissionPerPage, setRepaymentSubmissionPerPage] = useState(10);
+    const [loanPendingDelete, setLoanPendingDelete] = useState<Loan | null>(null);
     const [error, setError] = useState('');
     const [repaymentSubmissionStatusFilter, setRepaymentSubmissionStatusFilter] = useState('');
     const [repaymentFile, setRepaymentFile] = useState<File | null>(null);
@@ -317,14 +334,21 @@ function MemberLoansSection() {
         setOverview(data);
     };
 
-    const loadTables = async (nextLoanPage = loanPage, nextApprovalPage = approvalPage, nextRepaymentSubmissionPage = repaymentSubmissionPage) => {
+    const loadTables = async (
+        nextLoanPage = loanPage,
+        nextApprovalPage = approvalPage,
+        nextRepaymentSubmissionPage = repaymentSubmissionPage,
+        nextLoanPerPage = loanPerPage,
+        nextApprovalPerPage = approvalPerPage,
+        nextRepaymentPerPage = repaymentSubmissionPerPage,
+    ) => {
         const [loanResponse, approvalResponse, repaymentSubmissionResponse] = await Promise.all([
-            api.get<PaginatedResponse<Loan>>('/api/member/loans', { params: { page: nextLoanPage, per_page: 10 } }),
-            api.get<PaginatedResponse<LoanGuarantorApproval>>('/api/member/guarantor-approvals', { params: { page: nextApprovalPage, per_page: 10 } }),
+            api.get<PaginatedResponse<Loan>>('/api/member/loans', { params: { page: nextLoanPage, per_page: nextLoanPerPage } }),
+            api.get<PaginatedResponse<LoanGuarantorApproval>>('/api/member/guarantor-approvals', { params: { page: nextApprovalPage, per_page: nextApprovalPerPage } }),
             api.get<PaginatedResponse<LoanRepaymentSubmission>>('/api/member/loan-repayment-submissions', {
                 params: {
                     page: nextRepaymentSubmissionPage,
-                    per_page: 10,
+                    per_page: nextRepaymentPerPage,
                     status: repaymentSubmissionStatusFilter || undefined,
                 },
             }),
@@ -336,6 +360,9 @@ function MemberLoansSection() {
         setLoanPage(loanResponse.data.current_page);
         setApprovalPage(approvalResponse.data.current_page);
         setRepaymentSubmissionPage(repaymentSubmissionResponse.data.current_page);
+        setLoanPerPage(loanResponse.data.per_page);
+        setApprovalPerPage(approvalResponse.data.per_page);
+        setRepaymentSubmissionPerPage(repaymentSubmissionResponse.data.per_page);
     };
 
     useEffect(() => {
@@ -350,11 +377,11 @@ function MemberLoansSection() {
 
     useEffect(() => {
         const timeout = window.setTimeout(() => {
-            void loadTables(loanPage, approvalPage, 1);
+            void loadTables(loanPage, approvalPage, 1, loanPerPage, approvalPerPage, repaymentSubmissionPerPage);
         }, 250);
 
         return () => window.clearTimeout(timeout);
-    }, [repaymentSubmissionStatusFilter]);
+    }, [repaymentSubmissionStatusFilter, loanPerPage, approvalPerPage, repaymentSubmissionPerPage]);
 
     async function requestLoan(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -396,6 +423,7 @@ function MemberLoansSection() {
         try {
             await api.delete(`/api/member/loans/${loanId}`);
             showToast('Loan request deleted successfully.', 'success');
+            setLoanPendingDelete(null);
             await Promise.all([loadOverview(), loadTables(1, approvalPage, repaymentSubmissionPage)]);
         } catch (requestError: any) {
             showToast(requestError.response?.data?.message ?? 'Unable to delete loan request.', 'error');
@@ -534,10 +562,10 @@ function MemberLoansSection() {
                     <Panel eyebrow="Loan request" title="Submit a new loan request">
                     <form className="member-request-form grid gap-4" onSubmit={(event) => void requestLoan(event)}>
                         <input className="rounded-[20px] border border-[rgba(23,55,45,0.14)] bg-white px-4 py-3.5 text-[1rem]" min="1" onChange={(event) => setLoanForm((current) => ({ ...current, requested_amount: event.target.value }))} placeholder="Requested amount" type="number" value={loanForm.requested_amount} />
-                        <select className="rounded-[20px] border border-[rgba(23,55,45,0.14)] bg-white px-4 py-3.5 text-[1rem]" onChange={(event) => setLoanForm((current) => ({ ...current, guarantor_member_id: event.target.value }))} value={loanForm.guarantor_member_id}>
+                        <AppSelect className="rounded-[20px] border border-[rgba(23,55,45,0.14)] bg-white px-4 py-3.5 text-[1rem]" onChange={(event) => setLoanForm((current) => ({ ...current, guarantor_member_id: event.target.value }))} value={loanForm.guarantor_member_id}>
                             <option value="">Select guarantor</option>
                             {guarantors.map((guarantor) => <option key={guarantor.id} value={guarantor.id}>{guarantor.full_name} {guarantor.member_number ? `(${guarantor.member_number})` : ''}</option>)}
-                        </select>
+                        </AppSelect>
                         <input className="rounded-[20px] border border-[rgba(23,55,45,0.14)] bg-white px-4 py-3.5 text-[1rem]" onChange={(event) => setLoanForm((current) => ({ ...current, purpose: event.target.value }))} placeholder="Purpose of loan" value={loanForm.purpose} />
                         <textarea className="min-h-24 rounded-[20px] border border-[rgba(23,55,45,0.14)] bg-white px-4 py-3.5 text-[1rem]" onChange={(event) => setLoanForm((current) => ({ ...current, notes: event.target.value }))} placeholder="Additional notes" value={loanForm.notes} />
                         <button className="rounded-full bg-[var(--forest)] px-5 py-3.5 text-[1rem] font-semibold text-white" type="submit">Submit loan request</button>
@@ -552,26 +580,45 @@ function MemberLoansSection() {
                     {guarantorApprovals ? (
                         <DataTable
                             columns={[
-                                { key: 'member', header: 'Borrower', render: (approval) => approval.loan?.member?.full_name ?? 'Unknown' },
-                                { key: 'amount', header: 'Amount', render: (approval) => formatCurrency(approval.loan?.requested_amount ?? 0) },
-                                { key: 'status', header: 'Status', render: (approval) => approval.status.replace('_', ' ') },
+                                { key: 'member', header: 'Borrower', className: 'w-[24%]', render: (approval) => approval.loan?.member?.full_name ?? 'Unknown' },
+                                { key: 'amount', header: 'Amount', className: 'w-[20%]', render: (approval) => formatCurrency(approval.loan?.requested_amount ?? 0) },
+                                { key: 'status', header: 'Status', className: 'w-[16%]', render: (approval) => approval.status.replace('_', ' ') },
                                 {
                                     key: 'action',
                                     header: 'Action',
+                                    className: 'w-[40%] whitespace-nowrap',
                                     exportable: false,
-                                    render: (approval) => approval.status === 'pending' ? (
-                                        <div className="record-action-group">
-                                            <button className="rounded-full bg-[var(--forest)] px-3 py-2 text-[0.9rem] font-semibold text-white" onClick={() => void respondToGuarantorApproval(approval.id, 'approved')} type="button">Approve</button>
-                                            <button className="rounded-full bg-[var(--danger)] px-3 py-2 text-[0.9rem] font-semibold text-white" onClick={() => void respondToGuarantorApproval(approval.id, 'rejected')} type="button">Reject</button>
+                                    render: (approval) => (
+                                        <div className="record-action-group record-action-group--compact">
+                                            <button
+                                                aria-label={`View loan request from ${approval.loan?.member?.full_name ?? 'borrower'}`}
+                                                className="app-icon-button"
+                                                onClick={() => setSelectedGuarantorApproval(approval)}
+                                                title="View loan request"
+                                                type="button"
+                                            >
+                                                <ViewIcon />
+                                            </button>
+                                            {approval.status === 'pending' ? (
+                                                <>
+                                                    <button className="rounded-full bg-[var(--forest)] px-3 py-2 text-[0.9rem] font-semibold text-white" onClick={() => void respondToGuarantorApproval(approval.id, 'approved')} type="button">Approve</button>
+                                                    <button className="rounded-full bg-[var(--danger)] px-3 py-2 text-[0.9rem] font-semibold text-white" onClick={() => void respondToGuarantorApproval(approval.id, 'rejected')} type="button">Reject</button>
+                                                </>
+                                            ) : null}
                                         </div>
-                                    ) : approval.status,
+                                    ),
                                 },
                             ]}
                             currentPage={guarantorApprovals.current_page}
+                            currentPerPage={approvalPerPage}
                             emptyMessage="No guarantor requests are waiting for your response."
                             exportFilename="my-guarantor-requests.csv"
                             filterPlaceholder="Filter guarantor requests"
                             onPageChange={(page) => void loadTables(loanPage, page)}
+                            onPerPageChange={(value) => {
+                                setApprovalPage(1);
+                                setApprovalPerPage(value);
+                            }}
                             rowKey={(approval) => approval.id}
                             rows={guarantorApprovals.data}
                             totalItems={guarantorApprovals.total}
@@ -579,6 +626,52 @@ function MemberLoansSection() {
                         />
                     ) : null}
                     </Panel>
+                </div>
+            ) : null}
+
+            {selectedGuarantorApproval ? (
+                <div
+                    className="constitution-modal-backdrop"
+                    onClick={() => setSelectedGuarantorApproval(null)}
+                    role="presentation"
+                >
+                    <div
+                        aria-modal="true"
+                        className="constitution-modal constitution-modal--narrow"
+                        onClick={(event) => event.stopPropagation()}
+                        role="dialog"
+                    >
+                        <div className="constitution-modal__header">
+                            <div>
+                                <p className="constitution-modal__eyebrow">Guarantor review</p>
+                                <h3>Loan request details</h3>
+                            </div>
+                            <button
+                                className="constitution-modal__close"
+                                onClick={() => setSelectedGuarantorApproval(null)}
+                                type="button"
+                            >
+                                Close
+                            </button>
+                        </div>
+                        <div className="constitution-modal__body">
+                            <div className="member-inline-summary-grid grid gap-3 text-[0.98rem] text-[var(--muted)] md:grid-cols-2">
+                                <div><strong>Borrower:</strong> {selectedGuarantorApproval.loan?.member?.full_name ?? 'Unknown'}</div>
+                                <div><strong>Requested amount:</strong> {formatCurrency(selectedGuarantorApproval.loan?.requested_amount ?? 0)}</div>
+                                <div><strong>Date requested:</strong> {formatDate(selectedGuarantorApproval.loan?.requested_at)}</div>
+                                <div><strong>Guarantor status:</strong> {selectedGuarantorApproval.status.replace('_', ' ')}</div>
+                                <div><strong>Purpose:</strong> {selectedGuarantorApproval.loan?.purpose ?? 'Not stated'}</div>
+                                <div><strong>Cycle:</strong> {selectedGuarantorApproval.loan?.cycle?.code ?? 'Not set'}</div>
+                            </div>
+
+                            <div className="mt-5">
+                                <strong>Borrower note</strong>
+                                <p className="mt-2 text-[0.98rem] leading-7 text-[var(--muted)]">
+                                    {selectedGuarantorApproval.loan?.notes ?? 'No additional notes were provided for this request.'}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             ) : null}
 
@@ -653,20 +746,25 @@ function MemberLoansSection() {
                                     { key: 'submitted_at', header: 'Submitted At', render: (submission) => formatDate(submission.submitted_at) },
                                 ]}
                                 currentPage={repaymentSubmissions.current_page}
+                                currentPerPage={repaymentSubmissionPerPage}
                                 emptyMessage="No repayment receipts have been submitted yet."
                                 exportFilename="my-loan-repayment-submissions.csv"
                                 filterPlaceholder="Filter repayment submissions"
                                 onExport={(format) => void exportRepaymentSubmissions(format)}
                                 onPageChange={(nextPage) => void loadTables(loanPage, approvalPage, nextPage)}
+                                onPerPageChange={(value) => {
+                                    setRepaymentSubmissionPage(1);
+                                    setRepaymentSubmissionPerPage(value);
+                                }}
                                 rowKey={(submission) => submission.id}
                                 rows={repaymentSubmissions.data}
                                 toolbarExtras={(
-                                    <select className="app-filter-select" onChange={(event) => setRepaymentSubmissionStatusFilter(event.target.value)} value={repaymentSubmissionStatusFilter}>
+                                    <AppSelect className="app-filter-select" onChange={(event) => setRepaymentSubmissionStatusFilter(event.target.value)} value={repaymentSubmissionStatusFilter}>
                                         <option value="">All statuses</option>
                                         <option value="pending">Pending</option>
                                         <option value="approved">Approved</option>
                                         <option value="rejected">Rejected</option>
-                                    </select>
+                                    </AppSelect>
                                 )}
                                 totalItems={repaymentSubmissions.total}
                                 totalPages={repaymentSubmissions.last_page}
@@ -704,7 +802,7 @@ function MemberLoansSection() {
                                         }
 
                                         if (!['disbursed', 'partially_repaid', 'repaid'].includes(loan.status)) {
-                                            return <button className="rounded-full bg-[var(--danger)] px-3 py-2 text-[0.9rem] font-semibold text-white" onClick={() => void deleteLoan(loan.id)} type="button">Delete</button>;
+                                            return <button className="rounded-full bg-[var(--danger)] px-3 py-2 text-[0.9rem] font-semibold text-white" onClick={() => setLoanPendingDelete(loan)} type="button">Delete</button>;
                                         }
 
                                         return 'Locked';
@@ -712,11 +810,16 @@ function MemberLoansSection() {
                                 },
                             ]}
                             currentPage={loans.current_page}
+                            currentPerPage={loanPerPage}
                             emptyMessage="No loan requests have been submitted yet."
                             exportFilename="my-loans.csv"
                             filterPlaceholder="Filter my loans"
                             onExport={(format) => void exportLoans(format)}
                             onPageChange={(page) => void loadTables(page, approvalPage)}
+                            onPerPageChange={(value) => {
+                                setLoanPage(1);
+                                setLoanPerPage(value);
+                            }}
                             rowKey={(loan) => loan.id}
                             rows={loans.data}
                             totalItems={loans.total}
@@ -724,6 +827,51 @@ function MemberLoansSection() {
                         />
                     ) : null}
                     </Panel>
+                </div>
+            ) : null}
+
+            {loanPendingDelete ? (
+                <div className="constitution-modal-backdrop">
+                    <div className="constitution-modal constitution-modal--narrow">
+                        <div className="constitution-modal__header">
+                            <div>
+                                <div className="constitution-modal__eyebrow">Delete Loan Request</div>
+                                <h3>Are you sure you want to delete this loan request?</h3>
+                            </div>
+                            <button
+                                className="constitution-modal__close"
+                                onClick={() => setLoanPendingDelete(null)}
+                                type="button"
+                            >
+                                Close
+                            </button>
+                        </div>
+
+                        <div className="constitution-modal__body">
+                            <p>
+                                This will permanently remove your loan request for <strong>{formatCurrency(loanPendingDelete.requested_amount)}</strong>.
+                            </p>
+                            <p>
+                                Only loan requests that have not moved into a disbursed or repayment state can be deleted.
+                            </p>
+                            <div className="shareout-confirmation-actions">
+                                <button
+                                    className="rounded-full border border-[rgba(12,59,102,0.18)] bg-white px-4 py-2.5 text-[0.96rem] font-semibold text-[var(--ink)]"
+                                    onClick={() => setLoanPendingDelete(null)}
+                                    type="button"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    className="rounded-full bg-[var(--danger)] px-4 py-2.5 text-[0.96rem] font-semibold text-white"
+                                    onClick={() => void deleteLoan(loanPendingDelete.id)}
+                                    type="button"
+                                >
+                                    Yes, delete request
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             ) : null}
         </div>
@@ -773,6 +921,10 @@ function MemberSavingsSection() {
     const [submissionPage, setSubmissionPage] = useState(1);
     const [feeSubmissionPage, setFeeSubmissionPage] = useState(1);
     const [feePage, setFeePage] = useState(1);
+    const [sharePerPage, setSharePerPage] = useState(10);
+    const [submissionPerPage, setSubmissionPerPage] = useState(10);
+    const [feeSubmissionPerPage, setFeeSubmissionPerPage] = useState(10);
+    const [feePerPage, setFeePerPage] = useState(10);
     const [error, setError] = useState('');
     const [shareMonthFilter, setShareMonthFilter] = useState('');
     const [shareStatusFilter, setShareStatusFilter] = useState('');
@@ -790,12 +942,21 @@ function MemberSavingsSection() {
         setOverview(data);
     };
 
-    const loadTables = async (nextSharePage = sharePage, nextSubmissionPage = submissionPage, nextFeeSubmissionPage = feeSubmissionPage, nextFeePage = feePage) => {
+    const loadTables = async (
+        nextSharePage = sharePage,
+        nextSubmissionPage = submissionPage,
+        nextFeeSubmissionPage = feeSubmissionPage,
+        nextFeePage = feePage,
+        nextSharePerPage = sharePerPage,
+        nextSubmissionPerPage = submissionPerPage,
+        nextFeeSubmissionPerPage = feeSubmissionPerPage,
+        nextFeePerPage = feePerPage,
+    ) => {
         const [shareResponse, submissionResponse, feeSubmissionResponse, feeResponse] = await Promise.all([
             api.get<PaginatedResponse<SharePurchase>>('/api/member/share-purchases', {
                 params: {
                     page: nextSharePage,
-                    per_page: 10,
+                    per_page: nextSharePerPage,
                     share_month: shareMonthFilter || undefined,
                     payment_status: shareStatusFilter || undefined,
                 },
@@ -803,7 +964,7 @@ function MemberSavingsSection() {
             api.get<PaginatedResponse<SharePaymentSubmission>>('/api/member/share-payment-submissions', {
                 params: {
                     page: nextSubmissionPage,
-                    per_page: 10,
+                    per_page: nextSubmissionPerPage,
                     membership_cycle_id: submissionCycleFilter || undefined,
                     share_month: shareMonthFilter || undefined,
                     status: submissionStatusFilter || undefined,
@@ -812,7 +973,7 @@ function MemberSavingsSection() {
             api.get<PaginatedResponse<MembershipFeeSubmission>>('/api/member/membership-fee-submissions', {
                 params: {
                     page: nextFeeSubmissionPage,
-                    per_page: 10,
+                    per_page: nextFeeSubmissionPerPage,
                     membership_cycle_id: feeSubmissionCycleFilter || undefined,
                     fee_type: feeSubmissionTypeFilter || undefined,
                     status: feeSubmissionStatusFilter || undefined,
@@ -821,7 +982,7 @@ function MemberSavingsSection() {
             api.get<PaginatedResponse<MembershipFee>>('/api/member/membership-fees', {
                 params: {
                     page: nextFeePage,
-                    per_page: 10,
+                    per_page: nextFeePerPage,
                     membership_cycle_id: feeCycleFilter || undefined,
                     status: feeStatusFilter || undefined,
                     paid_month: feeMonthFilter || undefined,
@@ -836,6 +997,10 @@ function MemberSavingsSection() {
         setSubmissionPage(submissionResponse.data.current_page);
         setFeeSubmissionPage(feeSubmissionResponse.data.current_page);
         setFeePage(feeResponse.data.current_page);
+        setSharePerPage(shareResponse.data.per_page);
+        setSubmissionPerPage(submissionResponse.data.per_page);
+        setFeeSubmissionPerPage(feeSubmissionResponse.data.per_page);
+        setFeePerPage(feeResponse.data.per_page);
     };
 
     useEffect(() => {
@@ -857,11 +1022,11 @@ function MemberSavingsSection() {
 
     useEffect(() => {
         const timeout = window.setTimeout(() => {
-            void loadTables(1, 1, 1, 1);
+            void loadTables(1, 1, 1, 1, sharePerPage, submissionPerPage, feeSubmissionPerPage, feePerPage);
         }, 250);
 
         return () => window.clearTimeout(timeout);
-    }, [shareMonthFilter, shareStatusFilter, feeCycleFilter, feeStatusFilter, feeMonthFilter, submissionCycleFilter, submissionStatusFilter, feeSubmissionCycleFilter, feeSubmissionTypeFilter, feeSubmissionStatusFilter]);
+    }, [shareMonthFilter, shareStatusFilter, feeCycleFilter, feeStatusFilter, feeMonthFilter, submissionCycleFilter, submissionStatusFilter, feeSubmissionCycleFilter, feeSubmissionTypeFilter, feeSubmissionStatusFilter, sharePerPage, submissionPerPage, feeSubmissionPerPage, feePerPage]);
 
     async function submitSharePayment(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -1082,10 +1247,10 @@ function MemberSavingsSection() {
                     <form className="member-upload-form grid gap-4 md:grid-cols-2" onSubmit={(event) => void submitSharePayment(event)}>
                         <label className="app-field">
                             <span className="app-field__label">Cycle</span>
-                            <select className="app-field__control" onChange={(event) => setSubmissionForm((current) => ({ ...current, membership_cycle_id: event.target.value }))} required value={submissionForm.membership_cycle_id}>
+                            <AppSelect className="app-field__control" onChange={(event) => setSubmissionForm((current) => ({ ...current, membership_cycle_id: event.target.value }))} required value={submissionForm.membership_cycle_id}>
                                 <option value="">Select cycle</option>
                                 {cycles.map((cycle) => <option key={cycle.id} value={cycle.id}>{cycle.name}</option>)}
-                            </select>
+                            </AppSelect>
                         </label>
                         <label className="app-field">
                             <span className="app-field__label">Share Month</span>
@@ -1134,25 +1299,30 @@ function MemberSavingsSection() {
                                 { key: 'review_note', header: 'Review Note', render: (submission) => submission.review_note ?? 'Not reviewed' },
                             ]}
                             currentPage={sharePaymentSubmissions.current_page}
+                            currentPerPage={submissionPerPage}
                             emptyMessage="No share payment receipts have been submitted yet."
                             exportFilename="my-share-payment-submissions.csv"
                             filterPlaceholder="Filter receipt submissions"
                             onExport={(format) => void exportSharePaymentSubmissions(format)}
                             onPageChange={(page) => void loadTables(sharePage, page, feeSubmissionPage, feePage)}
+                            onPerPageChange={(value) => {
+                                setSubmissionPage(1);
+                                setSubmissionPerPage(value);
+                            }}
                             rowKey={(submission) => submission.id}
                             rows={sharePaymentSubmissions.data}
                             toolbarExtras={(
                                 <>
-                                    <select className="app-filter-select" onChange={(event) => setSubmissionCycleFilter(event.target.value)} value={submissionCycleFilter}>
+                                    <AppSelect className="app-filter-select" onChange={(event) => setSubmissionCycleFilter(event.target.value)} value={submissionCycleFilter}>
                                         <option value="">All cycles</option>
                                         {cycles.map((cycle) => <option key={cycle.id} value={cycle.id}>{cycle.code}</option>)}
-                                    </select>
-                                    <select className="app-filter-select" onChange={(event) => setSubmissionStatusFilter(event.target.value)} value={submissionStatusFilter}>
+                                    </AppSelect>
+                                    <AppSelect className="app-filter-select" onChange={(event) => setSubmissionStatusFilter(event.target.value)} value={submissionStatusFilter}>
                                         <option value="">All statuses</option>
                                         <option value="pending">Pending</option>
                                         <option value="approved">Approved</option>
                                         <option value="rejected">Rejected</option>
-                                    </select>
+                                    </AppSelect>
                                 </>
                             )}
                             totalItems={sharePaymentSubmissions.total}
@@ -1169,17 +1339,17 @@ function MemberSavingsSection() {
                     <form className="member-upload-form grid gap-4 md:grid-cols-2" onSubmit={(event) => void submitMembershipFeeReceipt(event)}>
                         <label className="app-field">
                             <span className="app-field__label">Cycle</span>
-                            <select className="app-field__control" onChange={(event) => setMembershipFeeForm((current) => ({ ...current, membership_cycle_id: event.target.value }))} required value={membershipFeeForm.membership_cycle_id}>
+                            <AppSelect className="app-field__control" onChange={(event) => setMembershipFeeForm((current) => ({ ...current, membership_cycle_id: event.target.value }))} required value={membershipFeeForm.membership_cycle_id}>
                                 <option value="">Select cycle</option>
                                 {cycles.map((cycle) => <option key={cycle.id} value={cycle.id}>{cycle.name}</option>)}
-                            </select>
+                            </AppSelect>
                         </label>
                         <label className="app-field">
                             <span className="app-field__label">Fee Type</span>
-                            <select className="app-field__control" onChange={(event) => setMembershipFeeForm((current) => ({ ...current, fee_type: event.target.value as 'new_member' | 'existing_member' }))} required value={membershipFeeForm.fee_type}>
+                            <AppSelect className="app-field__control" onChange={(event) => setMembershipFeeForm((current) => ({ ...current, fee_type: event.target.value as 'new_member' | 'existing_member' }))} required value={membershipFeeForm.fee_type}>
                                 <option value="new_member">New member</option>
                                 <option value="existing_member">Existing member</option>
-                            </select>
+                            </AppSelect>
                         </label>
                         <label className="app-field md:col-span-2">
                             <span className="app-field__label">Receipt Upload</span>
@@ -1219,30 +1389,35 @@ function MemberSavingsSection() {
                                 { key: 'review_note', header: 'Review Note', render: (submission) => submission.review_note ?? 'Not reviewed' },
                             ]}
                             currentPage={membershipFeeSubmissions.current_page}
+                            currentPerPage={feeSubmissionPerPage}
                             emptyMessage="No membership fee receipts have been submitted yet."
                             exportFilename="my-membership-fee-submissions.csv"
                             filterPlaceholder="Filter fee receipts"
                             onExport={(format) => void exportMembershipFeeSubmissions(format)}
                             onPageChange={(page) => void loadTables(sharePage, submissionPage, page, feePage)}
+                            onPerPageChange={(value) => {
+                                setFeeSubmissionPage(1);
+                                setFeeSubmissionPerPage(value);
+                            }}
                             rowKey={(submission) => submission.id}
                             rows={membershipFeeSubmissions.data}
                             toolbarExtras={(
                                 <>
-                                    <select className="app-filter-select" onChange={(event) => setFeeSubmissionCycleFilter(event.target.value)} value={feeSubmissionCycleFilter}>
+                                    <AppSelect className="app-filter-select" onChange={(event) => setFeeSubmissionCycleFilter(event.target.value)} value={feeSubmissionCycleFilter}>
                                         <option value="">All cycles</option>
                                         {cycles.map((cycle) => <option key={cycle.id} value={cycle.id}>{cycle.code}</option>)}
-                                    </select>
-                                    <select className="app-filter-select" onChange={(event) => setFeeSubmissionTypeFilter(event.target.value)} value={feeSubmissionTypeFilter}>
+                                    </AppSelect>
+                                    <AppSelect className="app-filter-select" onChange={(event) => setFeeSubmissionTypeFilter(event.target.value)} value={feeSubmissionTypeFilter}>
                                         <option value="">All fee types</option>
                                         <option value="new_member">New member</option>
                                         <option value="existing_member">Existing member</option>
-                                    </select>
-                                    <select className="app-filter-select" onChange={(event) => setFeeSubmissionStatusFilter(event.target.value)} value={feeSubmissionStatusFilter}>
+                                    </AppSelect>
+                                    <AppSelect className="app-filter-select" onChange={(event) => setFeeSubmissionStatusFilter(event.target.value)} value={feeSubmissionStatusFilter}>
                                         <option value="">All statuses</option>
                                         <option value="pending">Pending</option>
                                         <option value="approved">Approved</option>
                                         <option value="rejected">Rejected</option>
-                                    </select>
+                                    </AppSelect>
                                 </>
                             )}
                             totalItems={membershipFeeSubmissions.total}
@@ -1267,11 +1442,16 @@ function MemberSavingsSection() {
                                 { key: 'status', header: 'Status', render: (purchase) => purchase.payment_status },
                             ]}
                             currentPage={sharePurchases.current_page}
+                            currentPerPage={sharePerPage}
                             emptyMessage="No share purchases have been posted for your account yet."
                             exportFilename="my-share-history.csv"
                             filterPlaceholder="Filter share history"
                             onExport={(format) => void exportShareHistory(format)}
                             onPageChange={(page) => void loadTables(page, submissionPage, feeSubmissionPage, feePage)}
+                            onPerPageChange={(value) => {
+                                setSharePage(1);
+                                setSharePerPage(value);
+                            }}
                             rowKey={(purchase) => purchase.id}
                             rows={sharePurchases.data}
                             toolbarExtras={(
@@ -1282,12 +1462,12 @@ function MemberSavingsSection() {
                                         type="month"
                                         value={shareMonthFilter}
                                     />
-                                    <select className="app-filter-select" onChange={(event) => setShareStatusFilter(event.target.value)} value={shareStatusFilter}>
+                                    <AppSelect className="app-filter-select" onChange={(event) => setShareStatusFilter(event.target.value)} value={shareStatusFilter}>
                                         <option value="">All statuses</option>
                                         <option value="pending">Pending</option>
                                         <option value="paid">Paid</option>
                                         <option value="confirmed">Confirmed</option>
-                                    </select>
+                                    </AppSelect>
                                 </>
                             )}
                             totalItems={sharePurchases.total}
@@ -1311,25 +1491,30 @@ function MemberSavingsSection() {
                                 { key: 'paid_at', header: 'Paid At', render: (fee) => formatDate(fee.paid_at) },
                             ]}
                             currentPage={membershipFees.current_page}
+                            currentPerPage={feePerPage}
                             emptyMessage="No membership fee records found yet."
                             exportFilename="my-membership-fees.csv"
                             filterPlaceholder="Filter membership fees"
                             onExport={(format) => void exportMembershipFees(format)}
                             onPageChange={(page) => void loadTables(sharePage, submissionPage, feeSubmissionPage, page)}
+                            onPerPageChange={(value) => {
+                                setFeePage(1);
+                                setFeePerPage(value);
+                            }}
                             rowKey={(fee) => fee.id}
                             rows={membershipFees.data}
                             toolbarExtras={(
                                 <>
-                                    <select className="app-filter-select" onChange={(event) => setFeeCycleFilter(event.target.value)} value={feeCycleFilter}>
+                                    <AppSelect className="app-filter-select" onChange={(event) => setFeeCycleFilter(event.target.value)} value={feeCycleFilter}>
                                         <option value="">All cycles</option>
                                         {cycles.map((cycle) => <option key={cycle.id} value={cycle.id}>{cycle.code}</option>)}
-                                    </select>
-                                    <select className="app-filter-select" onChange={(event) => setFeeStatusFilter(event.target.value)} value={feeStatusFilter}>
+                                    </AppSelect>
+                                    <AppSelect className="app-filter-select" onChange={(event) => setFeeStatusFilter(event.target.value)} value={feeStatusFilter}>
                                         <option value="">All statuses</option>
                                         <option value="pending">Pending</option>
                                         <option value="paid">Paid</option>
                                         <option value="waived">Waived</option>
-                                    </select>
+                                    </AppSelect>
                                     <input
                                         className="app-filter-select"
                                         onChange={(event) => setFeeMonthFilter(event.target.value)}

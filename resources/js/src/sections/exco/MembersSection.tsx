@@ -1,5 +1,6 @@
 import { ChangeEvent, useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
+import { AppSelect } from '../../components/ui/AppSelect';
 import { DataTable } from '../../components/ui/DataTable';
 import { Field } from '../../components/ui/Field';
 import { Notice } from '../../components/ui/Notice';
@@ -116,6 +117,9 @@ export function MembersSection() {
     const [selectedMemberFees, setSelectedMemberFees] = useState<PaginatedResponse<MembershipFee> | null>(null);
     const [selectedMemberSharesPage, setSelectedMemberSharesPage] = useState(1);
     const [selectedMemberFeesPage, setSelectedMemberFeesPage] = useState(1);
+    const [membersPerPage, setMembersPerPage] = useState(10);
+    const [selectedMemberSharesPerPage, setSelectedMemberSharesPerPage] = useState(10);
+    const [selectedMemberFeesPerPage, setSelectedMemberFeesPerPage] = useState(10);
     const [selectedShareMonthFilter, setSelectedShareMonthFilter] = useState('');
     const [selectedShareStatusFilter, setSelectedShareStatusFilter] = useState('');
     const [selectedFeeCycleFilter, setSelectedFeeCycleFilter] = useState('');
@@ -127,20 +131,21 @@ export function MembersSection() {
     const [importFileName, setImportFileName] = useState('');
     const [importing, setImporting] = useState(false);
 
-    const loadMembersTable = async (page = 1, search = memberSearch, role = roleFilter, status = statusFilter) => {
+    const loadMembersTable = async (page = 1, search = memberSearch, role = roleFilter, status = statusFilter, perPage = membersPerPage) => {
         setLoading(true);
         setError('');
         try {
             const { data } = await api.get<PaginatedResponse<Member>>('/api/exco/members', {
                 params: {
                     page,
-                    per_page: 10,
+                    per_page: perPage,
                     search: search || undefined,
                     role: role || undefined,
                     status: status || undefined,
                 },
             });
             setMembersTable(data);
+            setMembersPerPage(data.per_page);
         } catch (requestError: any) {
             setError(requestError.response?.data?.message ?? 'Unable to load platform members right now.');
         } finally {
@@ -148,12 +153,12 @@ export function MembersSection() {
         }
     };
 
-    const loadSelectedMemberHistory = async (member: Member, sharePage = 1, feePage = 1) => {
+    const loadSelectedMemberHistory = async (member: Member, sharePage = 1, feePage = 1, sharePerPage = selectedMemberSharesPerPage, feePerPage = selectedMemberFeesPerPage) => {
         const [sharesResponse, feesResponse] = await Promise.all([
             api.get<PaginatedResponse<SharePurchase>>(`/api/exco/members/${member.id}/share-purchases`, {
                 params: {
                     page: sharePage,
-                    per_page: 8,
+                    per_page: sharePerPage,
                     share_month: selectedShareMonthFilter || undefined,
                     payment_status: selectedShareStatusFilter || undefined,
                 },
@@ -161,7 +166,7 @@ export function MembersSection() {
             api.get<PaginatedResponse<MembershipFee>>(`/api/exco/members/${member.id}/membership-fees`, {
                 params: {
                     page: feePage,
-                    per_page: 8,
+                    per_page: feePerPage,
                     membership_cycle_id: selectedFeeCycleFilter || undefined,
                     status: selectedFeeStatusFilter || undefined,
                     paid_month: selectedFeeMonthFilter || undefined,
@@ -173,6 +178,8 @@ export function MembersSection() {
         setSelectedMemberFees(feesResponse.data);
         setSelectedMemberSharesPage(sharesResponse.data.current_page);
         setSelectedMemberFeesPage(feesResponse.data.current_page);
+        setSelectedMemberSharesPerPage(sharesResponse.data.per_page);
+        setSelectedMemberFeesPerPage(feesResponse.data.per_page);
     };
 
     useEffect(() => {
@@ -197,7 +204,7 @@ export function MembersSection() {
         }, 250);
 
         return () => window.clearTimeout(timeout);
-    }, [selectedMember, selectedShareMonthFilter, selectedShareStatusFilter, selectedFeeCycleFilter, selectedFeeStatusFilter, selectedFeeMonthFilter]);
+    }, [selectedMember, selectedShareMonthFilter, selectedShareStatusFilter, selectedFeeCycleFilter, selectedFeeStatusFilter, selectedFeeMonthFilter, selectedMemberSharesPerPage, selectedMemberFeesPerPage]);
 
     async function exportMembers(format: TableExportFormat) {
         const { data } = await api.get<PaginatedResponse<Member>>('/api/exco/members', {
@@ -433,22 +440,22 @@ export function MembersSection() {
                                 <div className="members-intake-form__row">
                                     <label className="app-field">
                                         <span className="app-field__label">Role</span>
-                                        <select className="app-field__control" onChange={(event) => setMemberForm((current) => ({ ...current, role: event.target.value as UserRole }))} value={memberForm.role}>
+                                        <AppSelect className="app-field__control" onChange={(event) => setMemberForm((current) => ({ ...current, role: event.target.value as UserRole }))} value={memberForm.role}>
                                             <option value="member">Member</option>
                                             <option value="chairperson">Chairperson</option>
                                             <option value="secretary">Secretary</option>
                                             <option value="treasurer">Treasurer</option>
                                             <option value="support">Support</option>
-                                        </select>
+                                        </AppSelect>
                                     </label>
                                     <label className="app-field">
                                         <span className="app-field__label">Membership status</span>
-                                        <select className="app-field__control" onChange={(event) => setMemberForm((current) => ({ ...current, membership_status: event.target.value }))} value={memberForm.membership_status}>
+                                        <AppSelect className="app-field__control" onChange={(event) => setMemberForm((current) => ({ ...current, membership_status: event.target.value }))} value={memberForm.membership_status}>
                                             <option value="active">Active</option>
                                             <option value="approved">Approved</option>
                                             <option value="inactive">Inactive</option>
                                             <option value="pending_review">Pending review</option>
-                                        </select>
+                                        </AppSelect>
                                     </label>
                                 </div>
                                 <div className="members-intake-form__row">
@@ -464,17 +471,17 @@ export function MembersSection() {
                                 <div className="members-intake-form__row">
                                     <label className="app-field">
                                         <span className="app-field__label">Online banking</span>
-                                        <select className="app-field__control" onChange={(event) => setMemberForm((current) => ({ ...current, has_online_banking: event.target.value === 'true' }))} value={String(memberForm.has_online_banking)}>
+                                        <AppSelect className="app-field__control" onChange={(event) => setMemberForm((current) => ({ ...current, has_online_banking: event.target.value === 'true' }))} value={String(memberForm.has_online_banking)}>
                                             <option value="true">Yes</option>
                                             <option value="false">No</option>
-                                        </select>
+                                        </AppSelect>
                                     </label>
                                     <label className="app-field">
                                         <span className="app-field__label">WhatsApp active</span>
-                                        <select className="app-field__control" onChange={(event) => setMemberForm((current) => ({ ...current, whatsapp_active: event.target.value === 'true' }))} value={String(memberForm.whatsapp_active)}>
+                                        <AppSelect className="app-field__control" onChange={(event) => setMemberForm((current) => ({ ...current, whatsapp_active: event.target.value === 'true' }))} value={String(memberForm.whatsapp_active)}>
                                             <option value="true">Yes</option>
                                             <option value="false">No</option>
-                                        </select>
+                                        </AppSelect>
                                     </label>
                                 </div>
 
@@ -563,6 +570,7 @@ export function MembersSection() {
                             },
                         ]}
                         currentPage={membersTable.current_page}
+                        currentPerPage={membersPerPage}
                         emptyMessage="No members match the current search."
                         exportFilename="jds-members.csv"
                         filterPlaceholder="Filter members"
@@ -570,26 +578,29 @@ export function MembersSection() {
                         onFilterChange={setMemberSearch}
                         onExport={(format) => void exportMembers(format)}
                         onPageChange={(page) => void loadMembersTable(page, memberSearch, roleFilter, statusFilter)}
+                        onPerPageChange={(value) => {
+                            void loadMembersTable(1, memberSearch, roleFilter, statusFilter, value);
+                        }}
                         rowKey={(member) => member.id}
                         rows={membersTable.data}
                         toolbarExtras={(
                             <>
-                                <select className="app-filter-select" onChange={(event) => setRoleFilter(event.target.value)} value={roleFilter}>
+                                <AppSelect className="app-filter-select" onChange={(event) => setRoleFilter(event.target.value)} value={roleFilter}>
                                     <option value="">All roles</option>
                                     <option value="chairperson">Chairperson</option>
                                     <option value="secretary">Secretary</option>
                                     <option value="treasurer">Treasurer</option>
                                     <option value="support">Support</option>
                                     <option value="member">Member</option>
-                                </select>
-                                <select className="app-filter-select" onChange={(event) => setStatusFilter(event.target.value)} value={statusFilter}>
+                                </AppSelect>
+                                <AppSelect className="app-filter-select" onChange={(event) => setStatusFilter(event.target.value)} value={statusFilter}>
                                     <option value="">All statuses</option>
                                     <option value="active">Active</option>
                                     <option value="approved">Approved</option>
                                     <option value="pending_review">Pending review</option>
                                     <option value="rejected">Rejected</option>
                                     <option value="inactive">Inactive</option>
-                                </select>
+                                </AppSelect>
                             </>
                         )}
                         totalItems={membersTable.total}
@@ -614,10 +625,15 @@ export function MembersSection() {
                                     { key: 'payment_status', header: 'Status', render: (purchase) => <StatusBadge active={purchase.payment_status === 'confirmed' || purchase.payment_status === 'paid'}>{purchase.payment_status}</StatusBadge> },
                                 ]}
                                 currentPage={selectedMemberShares.current_page}
+                                currentPerPage={selectedMemberSharesPerPage}
                                 emptyMessage="No share purchases recorded yet for this member."
                                 filterPlaceholder="Filter share history"
                                 onExport={(format) => void exportSelectedMemberShares(format)}
                                 onPageChange={(page) => { setSelectedMemberSharesPage(page); void loadSelectedMemberHistory(selectedMember, page, selectedMemberFeesPage); }}
+                                onPerPageChange={(value) => {
+                                    setSelectedMemberSharesPage(1);
+                                    setSelectedMemberSharesPerPage(value);
+                                }}
                                 rowKey={(purchase) => purchase.id}
                                 rows={selectedMemberShares.data}
                                 toolbarExtras={(
@@ -628,12 +644,12 @@ export function MembersSection() {
                                             type="month"
                                             value={selectedShareMonthFilter}
                                         />
-                                        <select className="app-filter-select" onChange={(event) => setSelectedShareStatusFilter(event.target.value)} value={selectedShareStatusFilter}>
+                                        <AppSelect className="app-filter-select" onChange={(event) => setSelectedShareStatusFilter(event.target.value)} value={selectedShareStatusFilter}>
                                             <option value="">All statuses</option>
                                             <option value="pending">Pending</option>
                                             <option value="paid">Paid</option>
                                             <option value="confirmed">Confirmed</option>
-                                        </select>
+                                        </AppSelect>
                                     </>
                                 )}
                                 totalItems={selectedMemberShares.total}
@@ -657,25 +673,30 @@ export function MembersSection() {
                                     { key: 'paid_at', header: 'Paid At', render: (fee) => formatDate(fee.paid_at) },
                                 ]}
                                 currentPage={selectedMemberFees.current_page}
+                                currentPerPage={selectedMemberFeesPerPage}
                                 emptyMessage="No membership fee records found for this member."
                                 filterPlaceholder="Filter membership fees"
                                 onPageChange={(page) => { setSelectedMemberFeesPage(page); void loadSelectedMemberHistory(selectedMember, selectedMemberSharesPage, page); }}
+                                onPerPageChange={(value) => {
+                                    setSelectedMemberFeesPage(1);
+                                    setSelectedMemberFeesPerPage(value);
+                                }}
                                 rowKey={(fee) => fee.id}
                                 rows={selectedMemberFees.data}
                                 toolbarExtras={(
                                     <>
-                                        <select className="app-filter-select" onChange={(event) => setSelectedFeeCycleFilter(event.target.value)} value={selectedFeeCycleFilter}>
+                                        <AppSelect className="app-filter-select" onChange={(event) => setSelectedFeeCycleFilter(event.target.value)} value={selectedFeeCycleFilter}>
                                             <option value="">All cycles</option>
                                             {cycles.map((cycle) => (
                                                 <option key={cycle.id} value={cycle.id}>{cycle.code}</option>
                                             ))}
-                                        </select>
-                                        <select className="app-filter-select" onChange={(event) => setSelectedFeeStatusFilter(event.target.value)} value={selectedFeeStatusFilter}>
+                                        </AppSelect>
+                                        <AppSelect className="app-filter-select" onChange={(event) => setSelectedFeeStatusFilter(event.target.value)} value={selectedFeeStatusFilter}>
                                             <option value="">All statuses</option>
                                             <option value="pending">Pending</option>
                                             <option value="paid">Paid</option>
                                             <option value="waived">Waived</option>
-                                        </select>
+                                        </AppSelect>
                                         <input
                                             className="app-filter-select"
                                             onChange={(event) => setSelectedFeeMonthFilter(event.target.value)}
