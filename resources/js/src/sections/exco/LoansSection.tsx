@@ -326,7 +326,7 @@ export function LoansSection() {
                     <div className="loan-workspace-stack">
                         <Panel eyebrow="Disbursement" title="Post a loan disbursement">
                             <form className="loan-disbursement-form" onSubmit={(event) => void disburseLoan(event)}>
-                                <input className="rounded-[20px] border border-[rgba(23,55,45,0.14)] bg-white px-4 py-3.5 text-[1rem]" onChange={(event) => setDisbursementForm((current) => ({ ...current, payment_method: event.target.value }))} placeholder="Payment method" value={disbursementForm.payment_method} />
+                                <input className="app-field__control rounded-[20px] px-4 py-3.5 text-[1rem]" onChange={(event) => setDisbursementForm((current) => ({ ...current, payment_method: event.target.value }))} placeholder="Payment method" value={disbursementForm.payment_method} />
                                 <label className="app-field">
                                     <span className="app-field__label">Disbursement receipt</span>
                                     <input
@@ -337,7 +337,7 @@ export function LoansSection() {
                                         type="file"
                                     />
                                 </label>
-                                <textarea className="min-h-24 rounded-[20px] border border-[rgba(23,55,45,0.14)] bg-white px-4 py-3.5 text-[1rem]" onChange={(event) => setDisbursementForm((current) => ({ ...current, notes: event.target.value }))} placeholder="Notes" value={disbursementForm.notes} />
+                                <textarea className="app-field__control min-h-24 rounded-[20px] px-4 py-3.5 text-[1rem]" onChange={(event) => setDisbursementForm((current) => ({ ...current, notes: event.target.value }))} placeholder="Notes" value={disbursementForm.notes} />
                                 <button className="rounded-full bg-[var(--accent)] px-5 py-3.5 text-[1rem] font-semibold text-white" disabled={selectedLoan.status !== 'approved'} type="submit">Disburse loan</button>
                             </form>
 

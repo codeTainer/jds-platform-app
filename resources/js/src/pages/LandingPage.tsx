@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { useAppearance } from "../appearance/AppearanceProvider";
 import { Field } from "../components/ui/Field";
 import { Notice } from "../components/ui/Notice";
 import { api } from "../lib/api";
@@ -84,7 +85,7 @@ interface PublicSummaryResponse {
 
 const slides = [
     {
-        title: "Savings and loan operations for every JDS member",
+        title: "Savings and loan operations for every member",
         text: "A structured platform for onboarding, savings records, loan processing, and year-round accountability.",
         badge: "Cooperative Digital Platform",
     },
@@ -296,6 +297,7 @@ function formatNumber(value: number | string | undefined) {
 
 export function LandingPage() {
     const { login } = useAuth();
+    const { branding } = useAppearance();
     const navigate = useNavigate();
     const [loginModalOpen, setLoginModalOpen] = useState(false);
     const [signupOpen, setSignupOpen] = useState(false);
@@ -493,16 +495,26 @@ export function LandingPage() {
                 <header className="landing-topbar">
                     <div className="landing-topbar__inner">
                         <a className="landing-brand" href="#home">
-                            <div className="landing-brand__crest">JDS</div>
+                            {branding.logo_url ? (
+                                <div className="landing-brand__crest landing-brand__crest--image">
+                                    <img
+                                        alt={`${branding.app_name} logo`}
+                                        className="landing-brand__logo-image"
+                                        src={branding.logo_url}
+                                    />
+                                </div>
+                            ) : (
+                                <div className="landing-brand__crest">{branding.app_short_name}</div>
+                            )}
                             <div className="landing-brand__text">
-                                <div className="landing-brand__title">
-                                    JDS Platform
+                                    <div className="landing-brand__title">
+                                        {branding.app_name}
+                                    </div>
+                                    <div className="landing-brand__subtitle">
+                                        {branding.app_motto}
+                                    </div>
                                 </div>
-                                <div className="landing-brand__subtitle">
-                                    Savings and Loans Cooperative
-                                </div>
-                            </div>
-                        </a>
+                            </a>
 
                         <button
                             aria-expanded={mobileNavOpen}
@@ -585,7 +597,7 @@ export function LandingPage() {
                 <section className="landing-section" id="about">
                     <div className="landing-section__heading">
                         <span>About</span>
-                        <h2>About the JDS Platform</h2>
+                        <h2>About the {branding.app_name}</h2>
                         <p>
                             The platform is designed around the constitution of
                             the association, giving members and EXCO a clearer
@@ -674,7 +686,7 @@ export function LandingPage() {
                         <h2>Platform snapshot</h2>
                         <p>
                             Live indicators from the current local build of the
-                            JDS cooperative platform.
+                            {` ${branding.app_name}.`}
                         </p>
                     </div>
 
@@ -709,7 +721,7 @@ export function LandingPage() {
                             </div>
                         </div>
                         <div className="landing-cycle-banner__meta">
-                            <span>{summary?.active_cycle?.code ?? "JDS"}</span>
+                            <span>{summary?.active_cycle?.code ?? branding.app_short_name}</span>
                             <span>
                                 Share Price: NGN{" "}
                                 {formatNumber(
@@ -730,7 +742,7 @@ export function LandingPage() {
                     <div className="landing-footer__inner">
                         <div>
                             <div className="landing-footer__title">
-                                JDS Platform
+                                {branding.app_name}
                             </div>
                             <p>
                                 A cooperative system for savings, loans,
@@ -800,7 +812,7 @@ export function LandingPage() {
                         <div className="constitution-modal__header">
                             <div>
                                 <div className="constitution-modal__eyebrow">
-                                    JDS Constitution
+                                    {branding.app_short_name} Constitution
                                 </div>
                                 <h3>
                                     Association Constitution and Operating Rules

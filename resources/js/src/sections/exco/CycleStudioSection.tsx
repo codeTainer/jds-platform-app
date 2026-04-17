@@ -231,14 +231,19 @@ export function CycleStudioSection() {
                         ].map(([label, key, type], index) => (
                             <label className={`block ${index === 0 ? 'md:col-span-2' : ''}`.trim()} key={key}>
                                 <span className="mb-2 block text-[0.98rem] font-medium">{label}</span>
-                                <input className="w-full rounded-[20px] border border-[rgba(23,55,45,0.14)] bg-white px-4 py-3.5 text-[1rem]" onChange={(event) => setCycleForm((current) => ({ ...current, [key]: event.target.value }))} type={type} value={cycleForm[key as keyof CycleForm] as string} />
+                                <input
+                                    className="app-field__control w-full rounded-[20px] px-4 py-3.5 text-[1rem]"
+                                    onChange={(event) => setCycleForm((current) => ({ ...current, [key]: event.target.value }))}
+                                    type={type}
+                                    value={cycleForm[key as keyof CycleForm] as string}
+                                />
                             </label>
                         ))}
-                        <label className="flex items-center justify-between rounded-[20px] border border-[rgba(23,55,45,0.14)] bg-[rgba(247,250,248,1)] px-4 py-3.5 text-[0.98rem] md:col-span-2">
+                        <label className="cycle-studio__toggle-row md:col-span-2">
                             <span>Accept new applications immediately</span>
                             <input checked={cycleForm.accepting_new_applications} onChange={(event) => setCycleForm((current) => ({ ...current, accepting_new_applications: event.target.checked }))} type="checkbox" />
                         </label>
-                        <label className="flex items-center justify-between rounded-[20px] border border-[rgba(23,55,45,0.14)] bg-[rgba(247,250,248,1)] px-4 py-3.5 text-[0.98rem] md:col-span-2">
+                        <label className="cycle-studio__toggle-row md:col-span-2">
                             <span>Make this the active cycle</span>
                             <input checked={cycleForm.is_active} onChange={(event) => setCycleForm((current) => ({ ...current, is_active: event.target.checked }))} type="checkbox" />
                         </label>
@@ -248,7 +253,7 @@ export function CycleStudioSection() {
                                     {editingCycleId ? 'Save cycle changes' : 'Create cycle'}
                                 </button>
                                 {editingCycleId ? (
-                                    <button className="w-full rounded-full border border-[rgba(23,55,45,0.14)] bg-white px-5 py-3.5 text-[1rem] font-semibold text-[var(--forest)]" onClick={resetCycleForm} type="button">
+                                    <button className="cycle-studio__secondary-action w-full rounded-full px-5 py-3.5 text-[1rem] font-semibold" onClick={resetCycleForm} type="button">
                                         Cancel editing
                                     </button>
                                 ) : null}
@@ -264,7 +269,7 @@ export function CycleStudioSection() {
                     <Panel eyebrow="Existing cycles" title="Current cycle list">
                     <div className="space-y-4">
                         {cycles.map((cycle) => (
-                            <div key={cycle.id} className="rounded-[22px] border border-[rgba(23,55,45,0.08)] bg-[rgba(247,250,248,1)] px-5 py-5">
+                            <div key={cycle.id} className="cycle-studio__register-card px-5 py-5">
                                 <div className="flex flex-wrap items-start justify-between gap-4">
                                     <div>
                                         <div className="flex items-center gap-3">
@@ -280,7 +285,7 @@ export function CycleStudioSection() {
                                     </div>
                                     <div className="flex flex-wrap items-center gap-2">
                                         {!cycle.is_active ? (
-                                            <button className="rounded-full border border-[rgba(23,55,45,0.14)] px-4 py-2.5 text-[0.98rem] font-semibold" onClick={() => void activateCycle(cycle.id)} type="button">
+                                            <button className="cycle-studio__secondary-action rounded-full px-4 py-2.5 text-[0.98rem] font-semibold" onClick={() => void activateCycle(cycle.id)} type="button">
                                                 Activate
                                             </button>
                                         ) : null}

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { BrandMark } from '../components/ui/BrandMark';
 import { useAuth } from '../auth/AuthContext';
 import { useNotifications } from '../notifications/NotificationsProvider';
@@ -8,6 +8,12 @@ type MenuItem = {
     path: string;
     label: string;
     icon: JSX.Element;
+};
+
+type MenuGroup = {
+    key: string;
+    label: string;
+    items: MenuItem[];
 };
 
 function BellIcon() {
@@ -187,6 +193,37 @@ function SupportIcon() {
     );
 }
 
+function PaletteIcon() {
+    return (
+        <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+            <path d="M12 3.75c-4.832 0-8.75 3.582-8.75 8 0 3.278 2.155 5.122 4.75 5.122h1.393c.844 0 1.53.686 1.53 1.531 0 .704.57 1.273 1.273 1.273H13.5c4.832 0 8.75-3.582 8.75-8s-3.918-8-8.75-8Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+            <circle cx="7.75" cy="11" r="1" fill="currentColor" />
+            <circle cx="11" cy="8.5" r="1" fill="currentColor" />
+            <circle cx="15" cy="9.25" r="1" fill="currentColor" />
+            <circle cx="16.5" cy="13" r="1" fill="currentColor" />
+        </svg>
+    );
+}
+
+function ChevronIcon({ open }: { open: boolean }) {
+    return (
+        <svg
+            aria-hidden="true"
+            className={open ? 'dashboard-nav-group__chevron dashboard-nav-group__chevron--open' : 'dashboard-nav-group__chevron'}
+            fill="none"
+            viewBox="0 0 24 24"
+        >
+            <path
+                d="m9 6 6 6-6 6"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.8"
+            />
+        </svg>
+    );
+}
+
 function categoryLabel(category: string) {
     switch (category) {
         case 'shares':
@@ -222,6 +259,7 @@ export function DashboardLayout() {
     const { user, logout, isExco } = useAuth();
     const { notifications, unreadCount, loading, refresh, markRead, markAllRead } = useNotifications();
     const navigate = useNavigate();
+    const location = useLocation();
     const [notificationsOpen, setNotificationsOpen] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [settingsOpen, setSettingsOpen] = useState(false);
@@ -234,35 +272,73 @@ export function DashboardLayout() {
     });
     const settingsRef = useRef<HTMLDivElement | null>(null);
 
-    const menu: MenuItem[] = isExco
-        ? [
-              { path: '/dashboard/exco', label: 'Overview', icon: <OverviewIcon /> },
-              { path: '/dashboard/exco/cycles', label: 'Cycle Studio', icon: <CycleIcon /> },
-              { path: '/dashboard/exco/applications', label: 'Applications', icon: <ApplicationIcon /> },
-              { path: '/dashboard/exco/members', label: 'Members', icon: <MembersIcon /> },
-              { path: '/dashboard/exco/savings', label: 'Savings Management', icon: <SavingsIcon /> },
-              { path: '/dashboard/exco/shareouts', label: 'Share-out Studio', icon: <ShareoutIcon /> },
-              { path: '/dashboard/exco/loans', label: 'Loan Management', icon: <LoanIcon /> },
-              { path: '/dashboard/exco/exits', label: 'Exit Desk', icon: <ExitIcon /> },
-              { path: '/dashboard/exco/notifications', label: 'Notifications', icon: <BellIcon /> },
-              { path: '/dashboard/member', label: 'My Profile', icon: <ProfileIcon /> },
-              { path: '/dashboard/member/savings', label: 'My Savings', icon: <SavingsIcon /> },
-              { path: '/dashboard/member/shareouts', label: 'My Share-outs', icon: <ShareoutIcon /> },
-              { path: '/dashboard/member/loans', label: 'My Loans', icon: <LoanIcon /> },
-              { path: '/dashboard/member/exits', label: 'My Exit Requests', icon: <ExitIcon /> },
-              { path: '/dashboard/exco/audit', label: 'Audit Trail', icon: <AuditIcon /> },
-              { path: '/dashboard/exco/reports', label: 'Reports', icon: <ReportsIcon /> },
-              { path: '/dashboard/exco/support', label: 'Support Desk', icon: <SupportIcon /> },
-          ]
-        : [
-              { path: '/dashboard/member', label: 'My Profile', icon: <ProfileIcon /> },
-              { path: '/dashboard/member/savings', label: 'Savings', icon: <SavingsIcon /> },
-              { path: '/dashboard/member/shareouts', label: 'Share-outs', icon: <ShareoutIcon /> },
-              { path: '/dashboard/member/loans', label: 'Loans', icon: <LoanIcon /> },
-              { path: '/dashboard/member/exits', label: 'Exit Requests', icon: <ExitIcon /> },
-              { path: '/dashboard/member/notifications', label: 'Notifications', icon: <BellIcon /> },
-              { path: '/dashboard/member/support', label: 'Support', icon: <SupportIcon /> },
-          ];
+    const excoMenuGroups: MenuGroup[] = [
+        {
+            key: 'workspace',
+            label: 'Workspace',
+            items: [
+                { path: '/dashboard/exco', label: 'Overview', icon: <OverviewIcon /> },
+                { path: '/dashboard/exco/notifications', label: 'Notifications', icon: <BellIcon /> },
+                { path: '/dashboard/exco/appearance', label: 'Appearance', icon: <PaletteIcon /> },
+            ],
+        },
+        {
+            key: 'governance',
+            label: 'Governance',
+            items: [
+                { path: '/dashboard/exco/cycles', label: 'Cycle Studio', icon: <CycleIcon /> },
+                { path: '/dashboard/exco/applications', label: 'Applications', icon: <ApplicationIcon /> },
+                { path: '/dashboard/exco/members', label: 'Members', icon: <MembersIcon /> },
+            ],
+        },
+        {
+            key: 'operations',
+            label: 'Operations',
+            items: [
+                { path: '/dashboard/exco/savings', label: 'Savings Management', icon: <SavingsIcon /> },
+                { path: '/dashboard/exco/shareouts', label: 'Share-out Studio', icon: <ShareoutIcon /> },
+                { path: '/dashboard/exco/loans', label: 'Loan Management', icon: <LoanIcon /> },
+                { path: '/dashboard/exco/exits', label: 'Exit Desk', icon: <ExitIcon /> },
+            ],
+        },
+        {
+            key: 'memberview',
+            label: 'Member View',
+            items: [
+                { path: '/dashboard/member', label: 'My Profile', icon: <ProfileIcon /> },
+                { path: '/dashboard/member/savings', label: 'My Savings', icon: <SavingsIcon /> },
+                { path: '/dashboard/member/shareouts', label: 'My Share-outs', icon: <ShareoutIcon /> },
+                { path: '/dashboard/member/loans', label: 'My Loans', icon: <LoanIcon /> },
+                { path: '/dashboard/member/exits', label: 'My Exit Requests', icon: <ExitIcon /> },
+            ],
+        },
+        {
+            key: 'insights',
+            label: 'Insights',
+            items: [
+                { path: '/dashboard/exco/audit', label: 'Audit Trail', icon: <AuditIcon /> },
+                { path: '/dashboard/exco/reports', label: 'Reports', icon: <ReportsIcon /> },
+                { path: '/dashboard/exco/support', label: 'Support Desk', icon: <SupportIcon /> },
+            ],
+        },
+    ];
+
+    const memberMenu: MenuItem[] = [
+        { path: '/dashboard/member', label: 'My Profile', icon: <ProfileIcon /> },
+        { path: '/dashboard/member/savings', label: 'Savings', icon: <SavingsIcon /> },
+        { path: '/dashboard/member/shareouts', label: 'Share-outs', icon: <ShareoutIcon /> },
+        { path: '/dashboard/member/loans', label: 'Loans', icon: <LoanIcon /> },
+        { path: '/dashboard/member/exits', label: 'Exit Requests', icon: <ExitIcon /> },
+        { path: '/dashboard/member/notifications', label: 'Notifications', icon: <BellIcon /> },
+        { path: '/dashboard/member/support', label: 'Support', icon: <SupportIcon /> },
+    ];
+
+    const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
+        excoMenuGroups.reduce<Record<string, boolean>>((state, group) => {
+            state[group.key] = group.items.some((item) => location.pathname.startsWith(item.path));
+            return state;
+        }, {}),
+    );
 
     async function openNotifications() {
         setNotificationsOpen(true);
@@ -320,6 +396,31 @@ export function DashboardLayout() {
         };
     }, [settingsOpen]);
 
+    useEffect(() => {
+        if (!isExco) {
+            return;
+        }
+
+        setOpenGroups((current) => {
+            const next = { ...current };
+
+            excoMenuGroups.forEach((group) => {
+                if (group.items.some((item) => location.pathname.startsWith(item.path))) {
+                    next[group.key] = true;
+                }
+            });
+
+            return next;
+        });
+    }, [isExco, location.pathname]);
+
+    function toggleGroup(groupKey: string) {
+        setOpenGroups((current) => ({
+            ...current,
+            [groupKey]: !current[groupKey],
+        }));
+    }
+
     return (
         <div className="dashboard-shell">
             <div className="dashboard-layout">
@@ -344,7 +445,39 @@ export function DashboardLayout() {
                     </div>
 
                     <nav className="dashboard-sidebar__nav">
-                        {menu.map(({ path, label, icon }) => (
+                        {isExco ? excoMenuGroups.map((group) => {
+                            const isOpen = openGroups[group.key];
+
+                            return (
+                                <div className="dashboard-nav-group" key={group.key}>
+                                    <button
+                                        aria-expanded={isOpen}
+                                        className="dashboard-nav-group__trigger"
+                                        onClick={() => toggleGroup(group.key)}
+                                        type="button"
+                                    >
+                                        <span className="dashboard-nav-group__label">{group.label}</span>
+                                        <ChevronIcon open={isOpen} />
+                                    </button>
+                                    {isOpen ? (
+                                        <div className="dashboard-nav-group__items">
+                                            {group.items.map(({ path, label, icon }) => (
+                                                <NavLink
+                                                    key={path}
+                                                    className={({ isActive }) => isActive ? 'dashboard-nav-link dashboard-nav-link-active' : 'dashboard-nav-link dashboard-nav-link-idle'}
+                                                    end={path === '/dashboard/exco' || path === '/dashboard/member'}
+                                                    onClick={() => setSidebarOpen(false)}
+                                                    to={path}
+                                                >
+                                                    <span className="dashboard-nav-link__icon">{icon}</span>
+                                                    <span>{label}</span>
+                                                </NavLink>
+                                            ))}
+                                        </div>
+                                    ) : null}
+                                </div>
+                            );
+                        }) : memberMenu.map(({ path, label, icon }) => (
                             <NavLink
                                 key={path}
                                 className={({ isActive }) => isActive ? 'dashboard-nav-link dashboard-nav-link-active' : 'dashboard-nav-link dashboard-nav-link-idle'}

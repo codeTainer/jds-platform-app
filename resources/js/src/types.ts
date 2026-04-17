@@ -397,6 +397,15 @@ export interface NotificationPagination {
     to: number | null;
 }
 
+export interface BrandingSettings {
+    app_name: string;
+    app_short_name: string;
+    app_motto: string;
+    primary_color: string;
+    secondary_color: string;
+    logo_url?: string | null;
+}
+
 export interface NotificationListResponse {
     unread_count: number;
     notifications: AppNotification[];

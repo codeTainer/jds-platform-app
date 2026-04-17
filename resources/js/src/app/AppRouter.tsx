@@ -5,15 +5,17 @@ import { LandingPage } from '../pages/LandingPage';
 import { ExcoDashboardPage } from '../pages/ExcoDashboardPage';
 import { MemberDashboardPage } from '../pages/MemberDashboardPage';
 import { ForcePasswordChangePage } from '../pages/ForcePasswordChangePage';
+import { useAppearance } from '../appearance/AppearanceProvider';
 
 export function AppRouter() {
     const { booting, signedIn, isExco, hasMemberProfile, mustChangePassword } = useAuth();
+    const { branding } = useAppearance();
 
     if (booting) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-[var(--sand)]">
                 <div className="rounded-[32px] border border-white/70 bg-white/85 px-8 py-6 shadow-[0_24px_80px_rgba(70,57,28,0.12)]">
-                    Loading JDS platform...
+                    Loading {branding.app_name}...
                 </div>
             </div>
         );

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AppearanceController;
 use App\Http\Controllers\ExcoAuditLogController;
 use App\Http\Controllers\ExcoConcernController;
 use App\Http\Controllers\ExcoExitRequestController;
@@ -26,6 +27,7 @@ Route::get('/health', fn() => [
     'app' => config('app.name'),
 ]);
 Route::get('/public/summary', PublicSummaryController::class);
+Route::get('/public/appearance', [AppearanceController::class, 'publicShow']);
 
 Route::post('/auth/login', [AuthController::class, 'login']);
 
@@ -120,6 +122,8 @@ Route::prefix('exco')->middleware('auth.token')->group(function () {
     Route::get('/reports/loans', [ExcoReportController::class, 'loans']);
     Route::get('/reports/shareouts', [ExcoReportController::class, 'shareouts']);
     Route::get('/reports/concerns', [ExcoReportController::class, 'concerns']);
+    Route::get('/appearance', [AppearanceController::class, 'show']);
+    Route::match(['put', 'post'], '/appearance', [AppearanceController::class, 'update']);
 
     Route::get('/loans', [ExcoLoanController::class, 'index']);
     Route::patch('/loans/{loan}/approve', [ExcoLoanController::class, 'approve']);

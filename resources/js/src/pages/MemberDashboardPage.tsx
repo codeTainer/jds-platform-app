@@ -561,13 +561,13 @@ function MemberLoansSection() {
                 <div className="mt-6">
                     <Panel eyebrow="Loan request" title="Submit a new loan request">
                     <form className="member-request-form grid gap-4" onSubmit={(event) => void requestLoan(event)}>
-                        <input className="rounded-[20px] border border-[rgba(23,55,45,0.14)] bg-white px-4 py-3.5 text-[1rem]" min="1" onChange={(event) => setLoanForm((current) => ({ ...current, requested_amount: event.target.value }))} placeholder="Requested amount" type="number" value={loanForm.requested_amount} />
-                        <AppSelect className="rounded-[20px] border border-[rgba(23,55,45,0.14)] bg-white px-4 py-3.5 text-[1rem]" onChange={(event) => setLoanForm((current) => ({ ...current, guarantor_member_id: event.target.value }))} value={loanForm.guarantor_member_id}>
+                        <input className="app-field__control rounded-[20px] px-4 py-3.5 text-[1rem]" min="1" onChange={(event) => setLoanForm((current) => ({ ...current, requested_amount: event.target.value }))} placeholder="Requested amount" type="number" value={loanForm.requested_amount} />
+                        <AppSelect className="app-field__control rounded-[20px] px-4 py-3.5 text-[1rem]" onChange={(event) => setLoanForm((current) => ({ ...current, guarantor_member_id: event.target.value }))} value={loanForm.guarantor_member_id}>
                             <option value="">Select guarantor</option>
                             {guarantors.map((guarantor) => <option key={guarantor.id} value={guarantor.id}>{guarantor.full_name} {guarantor.member_number ? `(${guarantor.member_number})` : ''}</option>)}
                         </AppSelect>
-                        <input className="rounded-[20px] border border-[rgba(23,55,45,0.14)] bg-white px-4 py-3.5 text-[1rem]" onChange={(event) => setLoanForm((current) => ({ ...current, purpose: event.target.value }))} placeholder="Purpose of loan" value={loanForm.purpose} />
-                        <textarea className="min-h-24 rounded-[20px] border border-[rgba(23,55,45,0.14)] bg-white px-4 py-3.5 text-[1rem]" onChange={(event) => setLoanForm((current) => ({ ...current, notes: event.target.value }))} placeholder="Additional notes" value={loanForm.notes} />
+                        <input className="app-field__control rounded-[20px] px-4 py-3.5 text-[1rem]" onChange={(event) => setLoanForm((current) => ({ ...current, purpose: event.target.value }))} placeholder="Purpose of loan" value={loanForm.purpose} />
+                        <textarea className="app-field__control min-h-24 rounded-[20px] px-4 py-3.5 text-[1rem]" onChange={(event) => setLoanForm((current) => ({ ...current, notes: event.target.value }))} placeholder="Additional notes" value={loanForm.notes} />
                         <button className="rounded-full bg-[var(--forest)] px-5 py-3.5 text-[1rem] font-semibold text-white" type="submit">Submit loan request</button>
                     </form>
                     </Panel>
@@ -856,7 +856,7 @@ function MemberLoansSection() {
                             </p>
                             <div className="shareout-confirmation-actions">
                                 <button
-                                    className="rounded-full border border-[rgba(12,59,102,0.18)] bg-white px-4 py-2.5 text-[0.96rem] font-semibold text-[var(--ink)]"
+                                    className="landing-btn landing-btn--secondary"
                                     onClick={() => setLoanPendingDelete(null)}
                                     type="button"
                                 >
