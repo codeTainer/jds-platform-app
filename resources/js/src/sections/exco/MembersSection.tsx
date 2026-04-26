@@ -1,5 +1,4 @@
 import { ChangeEvent, useEffect, useState } from 'react';
-import * as XLSX from 'xlsx';
 import { AppSelect } from '../../components/ui/AppSelect';
 import { DataTable } from '../../components/ui/DataTable';
 import { Field } from '../../components/ui/Field';
@@ -295,6 +294,7 @@ export function MembersSection() {
 
         try {
             const buffer = await file.arrayBuffer();
+            const XLSX = await import('xlsx');
             const workbook = XLSX.read(buffer, { type: 'array' });
             const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
             const rawRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(firstSheet, {
@@ -346,7 +346,7 @@ export function MembersSection() {
         }
     }
 
-    function downloadImportTemplate(format: 'csv' | 'xlsx') {
+    async function downloadImportTemplate(format: 'csv' | 'xlsx') {
         const headers = [
             'full_name',
             'email',
@@ -388,6 +388,7 @@ export function MembersSection() {
             return;
         }
 
+        const XLSX = await import('xlsx');
         const worksheet = XLSX.utils.json_to_sheet(rows, {
             header: headers,
         });

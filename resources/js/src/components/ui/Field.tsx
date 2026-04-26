@@ -8,9 +8,10 @@ interface FieldProps {
     type?: string;
     placeholder?: string;
     icon?: ReactNode;
+    error?: string;
 }
 
-export function Field({ label, value, onChange, type = 'text', placeholder, icon }: FieldProps) {
+export function Field({ label, value, onChange, type = 'text', placeholder, icon, error }: FieldProps) {
     const [revealed, setRevealed] = useState(false);
     const isPasswordField = type === 'password';
     const inputType = isPasswordField && revealed ? 'text' : type;
@@ -20,7 +21,8 @@ export function Field({ label, value, onChange, type = 'text', placeholder, icon
             <span className="app-field__label">{label}</span>
             <span className="app-field__input-wrap">
                 <input
-                    className={`app-field__control${icon ? ' app-field__control--with-icon' : ''}${isPasswordField ? ' app-field__control--password' : ''}`}
+                    aria-invalid={error ? 'true' : 'false'}
+                    className={`app-field__control${icon ? ' app-field__control--with-icon' : ''}${isPasswordField ? ' app-field__control--password' : ''}${error ? ' app-field__control--error' : ''}`}
                     onChange={(event) => onChange(event.target.value)}
                     placeholder={placeholder}
                     type={inputType}
@@ -54,6 +56,7 @@ export function Field({ label, value, onChange, type = 'text', placeholder, icon
                     </button>
                 ) : null}
             </span>
+            {error ? <span className="app-field__error">{error}</span> : null}
         </label>
     );
 }

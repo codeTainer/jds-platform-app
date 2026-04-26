@@ -46,7 +46,8 @@ function extractNodeText(node: ReactNode): string {
     }
 
     if (isValidElement(node)) {
-        return extractNodeText(node.props.children);
+        const props = node.props as { children?: ReactNode };
+        return extractNodeText(props.children);
     }
 
     return '';
@@ -251,7 +252,7 @@ export function DataTable<T>({
             return;
         }
 
-        downloadTableExport(
+        await downloadTableExport(
             format,
             exportFilename,
             exportableColumns.map((column) => column.header),

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Field } from '../../components/ui/Field';
@@ -8,6 +8,7 @@ import { Panel } from '../../components/ui/Panel';
 import { useAuth } from '../../auth/AuthContext';
 import { useToast } from '../../feedback/ToastProvider';
 import { formatDate } from '../../lib/formatters';
+import { getPasswordRuleChecks, validatePasswordForm, type PasswordFormErrors } from '../../lib/passwordRules';
 
 function DetailRow({ label, value }: { label: string; value: string }) {
     return (
@@ -25,11 +26,20 @@ export function AccountSection() {
     const [passwordModalOpen, setPasswordModalOpen] = useState(false);
     const [passwordSubmitting, setPasswordSubmitting] = useState(false);
     const [passwordError, setPasswordError] = useState('');
+    const [passwordFieldErrors, setPasswordFieldErrors] = useState<PasswordFormErrors>({});
     const [passwordForm, setPasswordForm] = useState({
         current_password: '',
         password: '',
         password_confirmation: '',
     });
+    const passwordChecks = useMemo(() => getPasswordRuleChecks(
+        passwordForm.current_password,
+        passwordForm.password,
+        passwordForm.password_confirmation,
+        'Different from your current password',
+    ), [passwordForm.current_password, passwordForm.password, passwordForm.password_confirmation]);
+    const canSubmitPasswordChange = Object.keys(validatePasswordForm(passwordForm, 'current password')).length === 0
+        && passwordChecks.every((check) => check.passed);
 
     useEffect(() => {
         setPasswordModalOpen(searchParams.get('password') === '1');
@@ -47,10 +57,42 @@ export function AccountSection() {
         setSearchParams(nextParams);
         setPasswordModalOpen(false);
         setPasswordError('');
+        setPasswordFieldErrors({});
+    }
+
+    function updatePasswordField(field: keyof typeof passwordForm, value: string) {
+        const nextForm = {
+            ...passwordForm,
+            [field]: value,
+        };
+
+        setPasswordForm(nextForm);
+
+        if (Object.keys(passwordFieldErrors).length > 0) {
+            setPasswordFieldErrors(validatePasswordForm(nextForm, 'current password'));
+        }
+
+        if (passwordError) {
+            setPasswordError('');
+        }
     }
 
     async function submitPasswordChange(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
+        const validationErrors = validatePasswordForm(passwordForm, 'current password');
+
+        setPasswordFieldErrors(validationErrors);
+
+        if (Object.keys(validationErrors).length > 0) {
+            setPasswordError('Please correct the highlighted fields and try again.');
+            return;
+        }
+
+        if (!canSubmitPasswordChange) {
+            setPasswordError('Please satisfy all password requirements before continuing.');
+            return;
+        }
+
         setPasswordSubmitting(true);
         setPasswordError('');
 
@@ -63,6 +105,7 @@ export function AccountSection() {
                 password: '',
                 password_confirmation: '',
             });
+            setPasswordFieldErrors({});
         } catch (requestError: any) {
             const message = requestError.response?.data?.message ?? 'Unable to change your password right now.';
             setPasswordError(message);
@@ -151,19 +194,38 @@ export function AccountSection() {
                             <form className="auth-gate-form" onSubmit={(event) => void submitPasswordChange(event)}>
                                 <Field
                                     label="Current password"
-                                    onChange={(value) => setPasswordForm((current) => ({ ...current, current_password: value }))}
+                                    error={passwordFieldErrors.current_password}
+                                    onChange={(value) => updatePasswordField('current_password', value)}
                                     type="password"
                                     value={passwordForm.current_password}
                                 />
                                 <Field
                                     label="New password"
-                                    onChange={(value) => setPasswordForm((current) => ({ ...current, password: value }))}
+                                    error={passwordFieldErrors.password}
+                                    onChange={(value) => updatePasswordField('password', value)}
                                     type="password"
                                     value={passwordForm.password}
                                 />
+                                <div className="password-rules-card">
+                                    <p className="password-rules-card__title">Password requirements</p>
+                                    <div className="password-rules-list">
+                                        {passwordChecks.map((check) => (
+                                            <div
+                                                className={`password-rules-item${check.passed ? ' password-rules-item--passed' : ''}`}
+                                                key={check.label}
+                                            >
+                                                <span className="password-rules-item__icon" aria-hidden="true">
+                                                    {check.passed ? '✓' : '•'}
+                                                </span>
+                                                <span>{check.label}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
                                 <Field
                                     label="Confirm new password"
-                                    onChange={(value) => setPasswordForm((current) => ({ ...current, password_confirmation: value }))}
+                                    error={passwordFieldErrors.password_confirmation}
+                                    onChange={(value) => updatePasswordField('password_confirmation', value)}
                                     type="password"
                                     value={passwordForm.password_confirmation}
                                 />

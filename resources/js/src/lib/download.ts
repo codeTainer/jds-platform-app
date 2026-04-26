@@ -1,5 +1,3 @@
-import * as XLSX from 'xlsx';
-
 function titleCase(segment: string) {
     return segment
         .split(/\s+/)
@@ -69,12 +67,13 @@ export function downloadCsv(
     window.URL.revokeObjectURL(url);
 }
 
-export function downloadXlsx(
+export async function downloadXlsx(
     filename: string,
     headers: string[],
     rows: Array<Array<string | number | null | undefined>>,
     options: DownloadCsvOptions = {},
 ) {
+    const XLSX = await import('xlsx');
     const title = options.title ?? deriveExportTitle(filename);
     const worksheetData = buildExportRows(title, headers, rows);
     const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
@@ -98,7 +97,7 @@ export function downloadXlsx(
     XLSX.writeFile(workbook, normalizeFilename(filename, '.xlsx'));
 }
 
-export function downloadTableExport(
+export async function downloadTableExport(
     format: TableExportFormat,
     filename: string,
     headers: string[],
@@ -106,7 +105,7 @@ export function downloadTableExport(
     options: DownloadCsvOptions = {},
 ) {
     if (format === 'xlsx') {
-        downloadXlsx(filename, headers, rows, options);
+        await downloadXlsx(filename, headers, rows, options);
         return;
     }
 

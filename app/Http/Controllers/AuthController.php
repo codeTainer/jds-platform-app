@@ -106,7 +106,7 @@ class AuthController extends Controller
 
         $data = $request->validate([
             'current_password' => ['required', 'string'],
-            'password' => ['required', 'confirmed', Password::min(8)],
+            'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()->symbols()],
         ]);
 
         if (! Hash::check($data['current_password'], $user->password)) {
@@ -117,7 +117,9 @@ class AuthController extends Controller
 
         if (Hash::check($data['password'], $user->password)) {
             return response()->json([
-                'message' => 'Choose a new password that is different from the temporary password.',
+                'message' => $user->must_change_password
+                    ? 'Choose a new password that is different from the temporary password.'
+                    : 'Choose a new password that is different from your current password.',
             ], 422);
         }
 

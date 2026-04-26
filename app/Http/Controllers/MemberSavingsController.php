@@ -9,6 +9,7 @@ use App\Models\SharePurchase;
 use App\Models\SharePaymentSubmission;
 use App\Support\AuditLogger;
 use App\Support\ProcessNotifier;
+use App\Support\SharePurchaseWindow;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -193,11 +194,22 @@ class MemberSavingsController extends Controller
             ], 422);
         }
 
-        $shareMonth = Carbon::parse($data['share_month'])->startOfMonth()->toDateString();
+        $shareMonth = Carbon::parse($data['share_month'])->startOfMonth();
+        $cycleStartsOn = Carbon::parse($cycle->starts_on)->startOfMonth();
+        $cycleEndsOn = Carbon::parse($cycle->ends_on)->startOfMonth();
+        $sharePurchaseWindow = SharePurchaseWindow::forShareMonth($shareMonth, now(), $cycleStartsOn, $cycleEndsOn);
+
+        if (! $sharePurchaseWindow['is_open']) {
+            return response()->json([
+                'message' => SharePurchaseWindow::closedMessage($shareMonth, now(), $cycleStartsOn, $cycleEndsOn),
+            ], 422);
+        }
+
+        $shareMonthDate = $shareMonth->toDateString();
 
         $existingOfficial = SharePurchase::query()
             ->where('member_id', $member->id)
-            ->whereDate('share_month', $shareMonth)
+            ->whereDate('share_month', $shareMonthDate)
             ->exists();
 
         if ($existingOfficial) {
@@ -209,7 +221,7 @@ class MemberSavingsController extends Controller
         $existingPending = SharePaymentSubmission::query()
             ->where('member_id', $member->id)
             ->where('membership_cycle_id', $cycle->id)
-            ->whereDate('share_month', $shareMonth)
+            ->whereDate('share_month', $shareMonthDate)
             ->whereIn('status', ['pending', 'approved'])
             ->exists();
 
@@ -227,7 +239,7 @@ class MemberSavingsController extends Controller
         $submission = SharePaymentSubmission::create([
             'membership_cycle_id' => $cycle->id,
             'member_id' => $member->id,
-            'share_month' => $shareMonth,
+            'share_month' => $shareMonthDate,
             'shares_count' => $data['shares_count'],
             'unit_share_price' => $unitSharePrice,
             'expected_amount' => bcmul((string) $unitSharePrice, (string) $data['shares_count'], 2),
@@ -243,7 +255,7 @@ class MemberSavingsController extends Controller
 
         $this->processNotifier->notifyExco(
             title: 'New share receipt submitted',
-            message: "{$member->full_name} submitted a share payment receipt for " . Carbon::parse($shareMonth)->format('F Y') . '.',
+            message: "{$member->full_name} submitted a share payment receipt for " . $shareMonth->format('F Y') . '.',
             category: 'shares',
             actionUrl: '/dashboard/exco/savings',
             actionLabel: 'Review shares',
@@ -258,7 +270,7 @@ class MemberSavingsController extends Controller
             $request->user(),
             'shares.submission_created',
             $submission,
-            'Submitted share payment receipt for ' . Carbon::parse($shareMonth)->format('F Y') . '.',
+            'Submitted share payment receipt for ' . $shareMonth->format('F Y') . '.',
             [
                 'submission_id' => $submission->id,
                 'member_number' => $member->member_number,

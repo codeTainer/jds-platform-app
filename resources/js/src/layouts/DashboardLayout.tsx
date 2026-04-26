@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { BrandMark } from '../components/ui/BrandMark';
 import { useAuth } from '../auth/AuthContext';
@@ -7,7 +7,7 @@ import { useNotifications } from '../notifications/NotificationsProvider';
 type MenuItem = {
     path: string;
     label: string;
-    icon: JSX.Element;
+    icon: ReactNode;
 };
 
 type MenuGroup = {
@@ -272,7 +272,7 @@ export function DashboardLayout() {
     });
     const settingsRef = useRef<HTMLDivElement | null>(null);
 
-    const excoMenuGroups: MenuGroup[] = [
+    const excoMenuGroups = useMemo<MenuGroup[]>(() => [
         {
             key: 'workspace',
             label: 'Workspace',
@@ -321,9 +321,9 @@ export function DashboardLayout() {
                 { path: '/dashboard/exco/support', label: 'Support Desk', icon: <SupportIcon /> },
             ],
         },
-    ];
+    ], []);
 
-    const memberMenu: MenuItem[] = [
+    const memberMenu = useMemo<MenuItem[]>(() => [
         { path: '/dashboard/member', label: 'My Profile', icon: <ProfileIcon /> },
         { path: '/dashboard/member/savings', label: 'Savings', icon: <SavingsIcon /> },
         { path: '/dashboard/member/shareouts', label: 'Share-outs', icon: <ShareoutIcon /> },
@@ -331,7 +331,7 @@ export function DashboardLayout() {
         { path: '/dashboard/member/exits', label: 'Exit Requests', icon: <ExitIcon /> },
         { path: '/dashboard/member/notifications', label: 'Notifications', icon: <BellIcon /> },
         { path: '/dashboard/member/support', label: 'Support', icon: <SupportIcon /> },
-    ];
+    ], []);
 
     const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
         excoMenuGroups.reduce<Record<string, boolean>>((state, group) => {
@@ -412,7 +412,7 @@ export function DashboardLayout() {
 
             return next;
         });
-    }, [isExco, location.pathname]);
+    }, [excoMenuGroups, isExco, location.pathname]);
 
     function toggleGroup(groupKey: string) {
         setOpenGroups((current) => ({
